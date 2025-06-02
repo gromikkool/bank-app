@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: bank-app
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: individuals
+            client-secret: Sv7XYOdgXU27e5tkg84t8FoojF43XQPu
+            client-name: individuals
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9091/realms/individuals
+server:
+  port: 8092
+
+keycloak:
+  auth-server-url: http://localhost:9091/
+  realm: individuals
+  admin-user: admin
+  admin-password: 123
