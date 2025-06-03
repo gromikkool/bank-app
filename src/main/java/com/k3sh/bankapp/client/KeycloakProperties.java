@@ -25,5 +25,4 @@ public class KeycloakProperties {
 
     @Value("${keycloak.admin-password}")
     private String adminPassword;
-
 }

@@ -1,15 +1,12 @@
 package com.k3sh.bankapp.rest;
 
-import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
-import com.k3sh.bankapp.dto.LoginRequestDto;
-import com.k3sh.bankapp.dto.TokenDto;
+import com.k3sh.bankapp.dto.*;
 import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -22,7 +19,7 @@ public class AuthControllerV1 {
 
     @PostMapping("registration")
     public Mono<TokenDto> registration(@RequestBody AuthRegistrationRequestDto authRegistrationRequestDto) {
-        return userService.registerUser(authRegistrationRequestDto);
+        return userService.registration(authRegistrationRequestDto);
     }
 
     @PostMapping("login")
@@ -31,12 +28,20 @@ public class AuthControllerV1 {
     }
 
     @PostMapping("refresh-token")
-    public String refreshToken() {
-        return "refreshToken";
+    public Mono<TokenDto> refreshToken(@RequestBody RefreshTokenRequestDto refreshToken) {
+        return tokenService.refreshToken(refreshToken.refreshToken());
     }
 
-    @PostMapping("me")
-    public String me() {
-        return "me";
+    public static String getBearerTokenHeader() {
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (requestAttributes == null) return null;
+        return requestAttributes.getRequest().getHeader("Authorization");
+    }
+
+    @GetMapping("me")
+    public Mono<UserDto> me() {
+        String tokenHeader = getBearerTokenHeader();
+        if (tokenHeader == null) return Mono.empty();
+        return userService.me(tokenHeader);
     }
 }

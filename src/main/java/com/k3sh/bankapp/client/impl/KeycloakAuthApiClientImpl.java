@@ -1,16 +1,16 @@
 package com.k3sh.bankapp.client.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.k3sh.bankapp.client.ExAuthApiClient;
 import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
+import com.k3sh.bankapp.dto.UserDto;
 import com.k3sh.bankapp.exception.CreateUserException;
 import com.k3sh.bankapp.exception.LoginFailedException;
+import com.k3sh.bankapp.exception.RefreshTokenException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -22,6 +22,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
 
     private static final String PASSWORD = "password";
@@ -34,37 +35,67 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
     private static final String TYPE = "type";
     private static final String VALUE = "value";
     private static final String TEMPORARY = "temporary";
+    private static final String REFRESH_TOKEN = "refresh_token";
+    private static final String GRANT_TYPE = "grant_type";
+    private static final String SCOPE = "scope";
+    private static final String OPENID_PROFILE_EMAIL = "openid profile email";
 
-    private final ObjectMapper objectMapper;
     private final KeycloakProperties keycloakProperties;
-    private final AdminTokenManager adminTokenManager;
+    private final KeycloakAdminTokenManager keycloakAdminTokenManager;
+    private final WebClient webClient;
 
     @Override
     public Mono<TokenDto> login(String email, String password) {
-        return WebClient.builder().build().post()
-                .uri(keycloakProperties.getKeycloakServerUrl() + "/realms/" + keycloakProperties.getRealm() + "/protocol/openid-connect/token")
+        return webClient.post()
+                .uri(getUrl() + "token")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData("grant_type", PASSWORD)
+                .body(BodyInserters.fromFormData(GRANT_TYPE, PASSWORD)
                         .with(CLIENT_ID, keycloakProperties.getClientId())
                         .with(CLIENT_SECRET, keycloakProperties.getClientSecret())
                         .with(USERNAME, email)
-                        .with(PASSWORD, password))
+                        .with(PASSWORD, password)
+                        .with(SCOPE, OPENID_PROFILE_EMAIL))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, resp -> resp.bodyToMono(String.class)
-                        .flatMap(error -> Mono.error(new LoginFailedException("Login failed: " + error))))
-                .bodyToMono(TokenDto.class);
+                .bodyToMono(TokenDto.class)
+                .map(dto -> TokenDto.fromResponse(dto.accessToken(), dto.refreshToken(), dto.expires(), dto.tokenType()))
+                .onErrorResume(ex -> {
+                    log.error("Login failed", ex);
+                    return Mono.error(new LoginFailedException("Login failed: " + ex.getMessage()));
+                });
     }
 
     @Override
-    public Mono<TokenDto> register(AuthRegistrationRequestDto authRegistrationRequestDto) {
-        return adminTokenManager.getAdminAccessToken().
-                flatMap(token -> createUser(token.accessToken(), authRegistrationRequestDto)).
-                then(login(authRegistrationRequestDto.email(), authRegistrationRequestDto.password()));
+    public Mono<Void> registration(AuthRegistrationRequestDto authRegistrationRequestDto) {
+        return keycloakAdminTokenManager.getAdminAccessToken()
+                .flatMap(token -> createUser(token.accessToken(), authRegistrationRequestDto));
+    }
+
+    @Override
+    public Mono<UserDto> me(String accessToken) {
+        return webClient.get()
+                .uri(getUrl() + "userinfo")
+                .header(HttpHeaders.AUTHORIZATION, accessToken)
+                .retrieve()
+                .bodyToMono(UserDto.class)
+                .onErrorResume(ex -> Mono.error(new LoginFailedException("Login failed: " + ex.getMessage())));
+    }
+
+    @Override
+    public Mono<TokenDto> refreshToken(String refreshToken) {
+        return webClient.post()
+                .uri(getUrl() + "token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(GRANT_TYPE, REFRESH_TOKEN)
+                        .with(CLIENT_ID, keycloakProperties.getClientId())
+                        .with(CLIENT_SECRET, keycloakProperties.getClientSecret())
+                        .with(REFRESH_TOKEN, refreshToken)).retrieve().bodyToMono(TokenDto.class)
+                .map(dto -> TokenDto.fromResponse(dto.accessToken(), dto.refreshToken(), dto.expires(), dto.tokenType()))
+                .onErrorResume(ex -> Mono.error(new RefreshTokenException("Refresh token failed: " + ex.getMessage())));
     }
 
     private Mono<Void> createUser(String token, AuthRegistrationRequestDto requestDto) {
         if (requestDto == null) return Mono.empty();
-        return WebClient.builder().build().post()
+        return webClient.post()
                 .uri(keycloakProperties.getKeycloakServerUrl() + "/admin/realms/" + keycloakProperties.getRealm() + "/users")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -79,13 +110,12 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                         ))
                 ))
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-                        clientResponse.bodyToMono(String.class)
-                                .flatMap(errorBody -> {
-                                    String message = "Failed to create user: " + errorBody;
-                                    return Mono.error(new CreateUserException(message));
-                                })
-                )
-                .toBodilessEntity().then();
+                .toBodilessEntity()
+                .onErrorResume(ex -> Mono.error(new CreateUserException("Failed to create user: " + ex.getMessage())))
+                .then();
+    }
+
+    private String getUrl() {
+        return keycloakProperties.getKeycloakServerUrl() + "/realms/" + keycloakProperties.getRealm() + "/protocol/openid-connect/";
     }
 }
