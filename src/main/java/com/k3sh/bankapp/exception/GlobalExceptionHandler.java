@@ -52,4 +52,15 @@ public class GlobalExceptionHandler {
                         HttpStatus.UNAUTHORIZED.value()
                 ));
     }
+
+    @ExceptionHandler(PasswordNoMatch.class)
+    public ResponseEntity<ErrorResponse> handlePasswordNoMatch(PasswordNoMatch ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(
+                        ex.getMessage(),
+                        "PASSWORD_NO_MATCH",
+                        HttpStatus.BAD_REQUEST.value()
+                ));
+    }
 }

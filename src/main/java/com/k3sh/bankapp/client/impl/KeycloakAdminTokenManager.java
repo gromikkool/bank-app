@@ -4,6 +4,7 @@ import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.exception.AdminTokenFailed;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -11,6 +12,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class KeycloakAdminTokenManager {
@@ -40,6 +42,9 @@ public class KeycloakAdminTokenManager {
                 .bodyToMono(TokenDto.class)
                 .map(token -> TokenDto.fromResponse(token.accessToken(), token.refreshToken(), token.expires(), token.tokenType()))
                 .doOnNext(tokenDto -> adminToken = tokenDto)
-                .onErrorResume(ex -> Mono.error(new AdminTokenFailed("Failed to get admin access token: " + ex.getMessage())));
+                .onErrorResume(ex -> {
+                    log.error("Failed to get admin access token", ex);
+                    return Mono.error(new AdminTokenFailed("Failed to get admin access token: " + ex.getMessage()));
+                });
     }
 }

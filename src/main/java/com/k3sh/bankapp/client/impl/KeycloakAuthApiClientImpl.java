@@ -77,7 +77,10 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 .header(HttpHeaders.AUTHORIZATION, accessToken)
                 .retrieve()
                 .bodyToMono(UserDto.class)
-                .onErrorResume(ex -> Mono.error(new LoginFailedException("Login failed: " + ex.getMessage())));
+                .onErrorResume(ex -> {
+                    log.error("Login failed", ex);
+                    return Mono.error(new LoginFailedException("Login failed: " + ex.getMessage()));
+                });
     }
 
     @Override
@@ -90,7 +93,10 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                         .with(CLIENT_SECRET, keycloakProperties.getClientSecret())
                         .with(REFRESH_TOKEN, refreshToken)).retrieve().bodyToMono(TokenDto.class)
                 .map(dto -> TokenDto.fromResponse(dto.accessToken(), dto.refreshToken(), dto.expires(), dto.tokenType()))
-                .onErrorResume(ex -> Mono.error(new RefreshTokenException("Refresh token failed: " + ex.getMessage())));
+                .onErrorResume(ex -> {
+                    log.error("Refresh token failed", ex);
+                    return Mono.error(new RefreshTokenException("Refresh token failed: " + ex.getMessage()));
+                });
     }
 
     private Mono<Void> createUser(String token, AuthRegistrationRequestDto requestDto) {
@@ -111,7 +117,10 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 ))
                 .retrieve()
                 .toBodilessEntity()
-                .onErrorResume(ex -> Mono.error(new CreateUserException("Failed to create user: " + ex.getMessage())))
+                .onErrorResume(ex -> {
+                    log.error("Failed to create user", ex);
+                    return Mono.error(new CreateUserException("Failed to create user: " + ex.getMessage()));
+                })
                 .then();
     }
 

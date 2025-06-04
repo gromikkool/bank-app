@@ -5,6 +5,7 @@ import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.LoginRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.dto.UserDto;
+import com.k3sh.bankapp.exception.PasswordNoMatch;
 import com.k3sh.bankapp.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Mono<TokenDto> registration(AuthRegistrationRequestDto requestDto) {
+        if (!requestDto.password().equals(requestDto.confirmPassword())) {
+            return Mono.error(new PasswordNoMatch("Password confirmation does not match"));
+        }
         return apiClient.registration(requestDto).
                 then(login(new LoginRequestDto(requestDto.email(), requestDto.password())));
     }
