@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ErrorResponse.of(
-                        ex.getMessage(),
+                        "Invalid or expired refresh token",
                         "REFRESH_TOKEN_FAILED",
                         HttpStatus.UNAUTHORIZED.value()
                 ));
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(
-                        ex.getMessage(),
+                        "",
                         "CREATE_USER_FAILED",
                         HttpStatus.BAD_REQUEST.value()
                 ));
@@ -53,8 +53,8 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(PasswordNoMatch.class)
-    public ResponseEntity<ErrorResponse> handlePasswordNoMatch(PasswordNoMatch ex) {
+    @ExceptionHandler(PasswordDoesNotMatchException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordNoMatch(PasswordDoesNotMatchException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(

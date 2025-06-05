@@ -5,12 +5,14 @@ import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.LoginRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.dto.UserDto;
-import com.k3sh.bankapp.exception.PasswordNoMatch;
+import com.k3sh.bankapp.exception.PasswordDoesNotMatchException;
 import com.k3sh.bankapp.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -20,7 +22,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<TokenDto> registration(AuthRegistrationRequestDto requestDto) {
         if (!requestDto.password().equals(requestDto.confirmPassword())) {
-            return Mono.error(new PasswordNoMatch("Password confirmation does not match"));
+            log.error("Password confirmation does not match");
+            return Mono.error(new PasswordDoesNotMatchException("Password confirmation does not match"));
         }
         return apiClient.registration(requestDto).
                 then(login(new LoginRequestDto(requestDto.email(), requestDto.password())));

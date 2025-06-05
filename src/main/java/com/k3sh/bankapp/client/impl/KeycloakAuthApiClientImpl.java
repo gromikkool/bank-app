@@ -5,12 +5,12 @@ import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.dto.UserDto;
-import com.k3sh.bankapp.exception.CreateUserException;
-import com.k3sh.bankapp.exception.LoginFailedException;
-import com.k3sh.bankapp.exception.RefreshTokenException;
+import com.k3sh.bankapp.exception.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -116,6 +116,7 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                         ))
                 ))
                 .retrieve()
+                .onStatus(httpStatus -> httpStatus.value() == HttpStatus.CONFLICT.value(), response -> Mono.error(new UserAlreadyExists("User with this email already exists")))
                 .toBodilessEntity()
                 .onErrorResume(ex -> {
                     log.error("Failed to create user", ex);
