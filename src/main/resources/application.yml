@@ -26,3 +26,5 @@ keycloak:
   realm: individuals
   admin-user: admin
   admin-password: 123
+
+#todo: 2 application.yml, .env files

@@ -19,6 +19,7 @@ public class UserServiceImpl implements UserService {
 
     private final ExAuthApiClient apiClient;
 
+    //todo: jackson check password
     @Override
     public Mono<TokenDto> registration(AuthRegistrationRequestDto requestDto) {
         if (!requestDto.password().equals(requestDto.confirmPassword())) {
@@ -29,6 +30,7 @@ public class UserServiceImpl implements UserService {
                 then(login(new LoginRequestDto(requestDto.email(), requestDto.password())));
     }
 
+    // todo: send to TokenService
     @Override
     public Mono<TokenDto> login(LoginRequestDto loginDto) {
         return apiClient.login(loginDto.email(), loginDto.password());

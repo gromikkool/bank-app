@@ -1,4 +1,6 @@
 package com.k3sh.bankapp.dto;
 
-public record AuthRegistrationRequestDto(String email, String password, String confirmPassword) {
+import jakarta.validation.constraints.NotBlank;
+
+public record AuthRegistrationRequestDto(String email, @NotBlank String password, String confirmPassword) {
 }

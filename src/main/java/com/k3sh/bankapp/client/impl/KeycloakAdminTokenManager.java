@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+//todo: race condition
 public class KeycloakAdminTokenManager {
 
     private final WebClient webClient;
