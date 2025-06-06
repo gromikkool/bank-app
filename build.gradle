@@ -1,13 +1,12 @@
 plugins {
     id 'java'
     id 'war'
-    id 'org.springframework.boot' version '3.5.0'
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
 }
 
-// todo: gradle properties
-group = 'com.versonix.swinstares'
-version = '0.0.1-SNAPSHOT'
+group = appGroup
+version = appVersion
 
 java {
     toolchain {
