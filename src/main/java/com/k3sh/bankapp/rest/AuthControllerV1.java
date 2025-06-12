@@ -3,6 +3,8 @@ package com.k3sh.bankapp.rest;
 import com.k3sh.bankapp.dto.*;
 import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -18,13 +20,13 @@ public class AuthControllerV1 {
     private final TokenService tokenService;
 
     @PostMapping("registration")
-    public Mono<TokenDto> registration(@RequestBody AuthRegistrationRequestDto authRegistrationRequestDto) {
+    public Mono<TokenDto> registration(@RequestBody @Valid AuthRegistrationRequestDto authRegistrationRequestDto) {
         return userService.registration(authRegistrationRequestDto);
     }
 
     @PostMapping("login")
     public Mono<TokenDto> login(@RequestBody LoginRequestDto loginRequestDto) {
-        return userService.login(loginRequestDto);
+        return tokenService.login(loginRequestDto);
     }
 
     @PostMapping("refresh-token")

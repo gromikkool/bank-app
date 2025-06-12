@@ -8,6 +8,5 @@ import reactor.core.publisher.Mono;
 
 public interface UserService {
      Mono<TokenDto> registration(AuthRegistrationRequestDto authRegistrationResponseDto) ;
-     Mono<TokenDto> login(LoginRequestDto loginRequestDto);
      Mono<UserDto> me(String accessToken);
 }

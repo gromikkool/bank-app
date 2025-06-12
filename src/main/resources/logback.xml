@@ -1,19 +1,23 @@
 <configuration>
     <property name="LOG_FILE" value="logs/import" />
 
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/log.log</file>
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Daily rollover -->
-            <fileNamePattern>logs/import.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- Keep logs for 7 days -->
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>7</maxHistory>
         </rollingPolicy>
 
-        <encoder>
-            <pattern>%date %level [%file:%line] - %msg%n</pattern>
-            <charset>UTF-8</charset>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                    <prettyPrint>true</prettyPrint>
+                </jsonFormatter>
+                <timestampFormat>yyyy-MM-dd HH:mm:ss.SSS</timestampFormat>
+                <appendLineSeparator>true</appendLineSeparator>
+            </layout>
         </encoder>
 
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -30,10 +34,8 @@
 
 
     <root level="INFO">
-        <appender-ref ref="FILE" />
+        <appender-ref ref="FILE_JSON" />
         <appender-ref ref="CONSOLE" />
     </root>
 
 </configuration>
-
-<!--Todo: JSON FORMAR

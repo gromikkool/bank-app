@@ -6,10 +6,14 @@ import com.k3sh.bankapp.dto.LoginRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.dto.UserDto;
 import com.k3sh.bankapp.exception.PasswordDoesNotMatchException;
+import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -18,22 +22,12 @@ import reactor.core.publisher.Mono;
 public class UserServiceImpl implements UserService {
 
     private final ExAuthApiClient apiClient;
+    private final TokenService tokenService;
 
-    //todo: jackson check password
     @Override
     public Mono<TokenDto> registration(AuthRegistrationRequestDto requestDto) {
-        if (!requestDto.password().equals(requestDto.confirmPassword())) {
-            log.error("Password confirmation does not match");
-            return Mono.error(new PasswordDoesNotMatchException("Password confirmation does not match"));
-        }
-        return apiClient.registration(requestDto).
-                then(login(new LoginRequestDto(requestDto.email(), requestDto.password())));
-    }
-
-    // todo: send to TokenService
-    @Override
-    public Mono<TokenDto> login(LoginRequestDto loginDto) {
-        return apiClient.login(loginDto.email(), loginDto.password());
+        return apiClient.registration(requestDto)
+                .then(tokenService.login(new LoginRequestDto(requestDto.email(), requestDto.password())));
     }
 
     @Override

@@ -1,9 +1,14 @@
 package com.k3sh.bankapp.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.k3sh.bankapp.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -62,5 +67,18 @@ public class GlobalExceptionHandler {
                         "PASSWORD_NO_MATCH",
                         HttpStatus.BAD_REQUEST.value()
                 ));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String message = error.getDefaultMessage();
+            errors.put("error", message);
+        });
+
+        return errors;
     }
 }
