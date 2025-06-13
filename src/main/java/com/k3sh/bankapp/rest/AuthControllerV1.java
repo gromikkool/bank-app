@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("api/v1/auth/")
 @RequiredArgsConstructor
-@Tag(name = "auth-controller-v-1", description = "Authentication and Registration")
+@Tag(name = "auth-controller-v-1", description = "API for registration, authentication, token refresh, and user data retrieval.")
 public class AuthControllerV1 {
 
     private final UserService userService;
