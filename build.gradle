@@ -5,8 +5,11 @@ plugins {
     id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
 }
 
-group = appGroup
-version = appVersion
+version = project.property("version")
+
+springBoot {
+    buildInfo()
+}
 
 java {
     toolchain {
@@ -32,6 +35,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation "ch.qos.logback.contrib:logback-json-classic:${logbackVersion}"
     implementation "ch.qos.logback.contrib:logback-jackson:${logbackVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springOpenApiVersion}"
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 

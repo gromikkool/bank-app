@@ -28,7 +28,5 @@ server:
 keycloak:
   auth-server-url: http://localhost:9091/
   realm: ${KEYCLOAK_REALM}
-  admin-user: ${KEYCLOAK_ADMIN_USER}
-  admin-password: ${KEYCLOAK_ADMIN_PASSWORD}
-
-#todo: 2 application.yml, .env files
+  admin-user: ${KEYCLOAK_ADMIN_USER_INDIVIDUALS}
+  admin-password: ${KEYCLOAK_ADMIN_PASSWORD_INDIVIDUALS}
