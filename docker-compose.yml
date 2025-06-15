@@ -7,11 +7,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -32,13 +32,32 @@ services:
       KC_HOSTNAME: localhost
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED}
+      KC_HEALTH_ENABLED: ${KEYCLOAK_HEALTH_ENABLED}
+      KC_HTTP_MANAGEMENT_PORT: ${KEYCLOAK_MANAGEMENT_PORT}
     ports:
-      - "9091:8080"
+      - "${KEYCLOAK_PORT}:8080"
+      - "${KEYCLOAK_MANAGEMENT_PORT}:7800"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - keycloak_net
+
+  bank-app:
+    image: bank-app
+    container_name: bank-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "${BANK_APP_PORT}:8092"
+      - "${BANK_APP_DEBUG_PORT}:5005"
+    depends_on:
+      - keycloak
+
 networks:
   keycloak_net:
 volumes:

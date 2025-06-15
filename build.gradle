@@ -1,11 +1,16 @@
 plugins {
     id 'java'
-    id 'war'
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
 }
 
 version = project.property("version")
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.k3sh.bankapp.BankAppApplication'
+    }
+}
 
 springBoot {
     buildInfo()
@@ -42,7 +47,6 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
