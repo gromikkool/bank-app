@@ -23,10 +23,10 @@ spring:
         jwt:
           issuer-uri: ${JWT_RESOURCE_SERVER_URL}
 server:
-  port: 8092
+  port: ${BANK_APP_PORT}
 
 keycloak:
-  auth-server-url: http://localhost:9091/
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
   realm: ${KEYCLOAK_REALM}
   admin-user: ${KEYCLOAK_ADMIN_USER_INDIVIDUALS}
   admin-password: ${KEYCLOAK_ADMIN_PASSWORD_INDIVIDUALS}
