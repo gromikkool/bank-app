@@ -28,5 +28,5 @@ server:
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
   realm: ${KEYCLOAK_REALM}
-  admin-user: ${KEYCLOAK_ADMIN_USER_INDIVIDUALS}
-  admin-password: ${KEYCLOAK_ADMIN_PASSWORD_INDIVIDUALS}
+  realm-admin-user: ${KEYCLOAK_REALM_ADMIN_USER}
+  realm-admin-password: ${KEYCLOAK_REALM_ADMIN_PASSWORD}

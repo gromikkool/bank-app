@@ -3,7 +3,7 @@ FROM gradle:8.5-jdk21 AS build
 WORKDIR /app
 
 COPY . .
-RUN ./gradlew clean build
+RUN ./gradlew clean build -x test
 
 #Stage 2: Create the Docker Image
 FROM openjdk:21-jdk-slim

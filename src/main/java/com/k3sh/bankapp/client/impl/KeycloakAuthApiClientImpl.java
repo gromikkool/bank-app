@@ -4,13 +4,16 @@ import com.k3sh.bankapp.client.ExAuthApiClient;
 import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
+import com.k3sh.bankapp.dto.UserCreationDto;
 import com.k3sh.bankapp.dto.UserDto;
-import com.k3sh.bankapp.exception.*;
+import com.k3sh.bankapp.exception.CreateUserException;
+import com.k3sh.bankapp.exception.LoginFailedException;
+import com.k3sh.bankapp.exception.RefreshTokenException;
+import com.k3sh.bankapp.exception.UserAlreadyExists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -65,7 +68,7 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
     }
 
     @Override
-    public Mono<Void> registration(AuthRegistrationRequestDto authRegistrationRequestDto) {
+    public Mono<UserCreationDto> registration(AuthRegistrationRequestDto authRegistrationRequestDto) {
         return keycloakAdminTokenManager.getAdminAccessToken()
                 .flatMap(token -> createUser(token.accessToken(), authRegistrationRequestDto));
     }
@@ -99,7 +102,7 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 });
     }
 
-    private Mono<Void> createUser(String token, AuthRegistrationRequestDto requestDto) {
+    private Mono<UserCreationDto> createUser(String token, AuthRegistrationRequestDto requestDto) {
         if (requestDto == null) return Mono.empty();
         return webClient.post()
                 .uri(keycloakProperties.getKeycloakServerUrl() + "/admin/realms/" + keycloakProperties.getRealm() + "/users")
@@ -109,6 +112,7 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                         USERNAME, requestDto.email(),
                         EMAIL, requestDto.email(),
                         ENABLED, true,
+                        "emailVerified", true,
                         CREDENTIALS, List.of(Map.of(
                                 TYPE, PASSWORD,
                                 VALUE, requestDto.password(),
@@ -118,11 +122,21 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 .retrieve()
                 .onStatus(httpStatus -> httpStatus.value() == HttpStatus.CONFLICT.value(), response -> Mono.error(new UserAlreadyExists("User with this email already exists")))
                 .toBodilessEntity()
+                .map(entity -> {
+                    HttpHeaders headers = entity.getHeaders();
+                    String location = headers.getFirst(HttpHeaders.LOCATION);
+                    String id = (location != null && location.contains("/users/"))
+                            ? location.substring(location.lastIndexOf("/") + 1)
+                            : "unknown";
+
+                    log.info("User successfully created: {}", id);
+
+                    return new UserCreationDto(id, requestDto.email(), entity.getStatusCode());
+                })
                 .onErrorResume(ex -> {
                     log.error("Failed to create user", ex);
                     return Mono.error(new CreateUserException("Failed to create user: " + ex.getMessage()));
-                })
-                .then();
+                });
     }
 
     private String getUrl() {

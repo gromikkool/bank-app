@@ -20,9 +20,9 @@ public class KeycloakProperties {
     @Value("${spring.security.oauth2.client.registration.keycloak.client-secret}")
     private String clientSecret;
 
-    @Value("${keycloak.admin-user}")
+    @Value("${keycloak.realm-admin-user}")
     private String adminUsername;
 
-    @Value("${keycloak.admin-password}")
+    @Value("${keycloak.realm-admin-password}")
     private String adminPassword;
 }
