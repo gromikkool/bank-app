@@ -6,10 +6,10 @@ import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.dto.UserCreationDto;
 import com.k3sh.bankapp.dto.UserDto;
-import com.k3sh.bankapp.exception.CreateUserException;
 import com.k3sh.bankapp.exception.LoginFailedException;
 import com.k3sh.bankapp.exception.RefreshTokenException;
 import com.k3sh.bankapp.exception.UserAlreadyExists;
+import com.k3sh.bankapp.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -81,8 +81,8 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 .retrieve()
                 .bodyToMono(UserDto.class)
                 .onErrorResume(ex -> {
-                    log.error("Login failed", ex);
-                    return Mono.error(new LoginFailedException("Login failed: " + ex.getMessage()));
+                    log.error("User not found", ex);
+                    return Mono.error(new UserNotFoundException("User not found" + ex.getMessage()));
                 });
     }
 
@@ -123,19 +123,8 @@ public class KeycloakAuthApiClientImpl implements ExAuthApiClient {
                 .onStatus(httpStatus -> httpStatus.value() == HttpStatus.CONFLICT.value(), response -> Mono.error(new UserAlreadyExists("User with this email already exists")))
                 .toBodilessEntity()
                 .map(entity -> {
-                    HttpHeaders headers = entity.getHeaders();
-                    String location = headers.getFirst(HttpHeaders.LOCATION);
-                    String id = (location != null && location.contains("/users/"))
-                            ? location.substring(location.lastIndexOf("/") + 1)
-                            : "unknown";
-
-                    log.info("User successfully created: {}", id);
-
-                    return new UserCreationDto(id, requestDto.email(), entity.getStatusCode());
-                })
-                .onErrorResume(ex -> {
-                    log.error("Failed to create user", ex);
-                    return Mono.error(new CreateUserException("Failed to create user: " + ex.getMessage()));
+                    log.info("User successfully created: {}", requestDto.email());
+                    return new UserCreationDto(requestDto.email(), entity.getStatusCode());
                 });
     }
 

@@ -1,9 +1,9 @@
 package com.k3sh.bankapp.rest;
 
 import com.k3sh.bankapp.dto.*;
+import com.k3sh.bankapp.exception.UserNotFoundException;
 import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,7 +61,8 @@ public class AuthControllerV1 {
     @GetMapping("me")
     public Mono<UserDto> me() {
         String tokenHeader = getBearerTokenHeader();
-        if (tokenHeader == null) return Mono.empty();
+        if (tokenHeader == null)
+            return Mono.error(new UserNotFoundException("User not found"));
         return userService.me(tokenHeader);
     }
 }

@@ -12,22 +12,45 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
-//todo: race condition
 public class KeycloakAdminTokenManager {
 
     private final WebClient webClient;
     private final KeycloakProperties keycloakProperties;
-    private TokenDto adminToken;
+    private final AtomicReference<TokenDto> adminToken = new AtomicReference<>();
+    private final AtomicReference<Mono<TokenDto>> isRequestInProgress = new AtomicReference<>();
 
     public Mono<TokenDto> getAdminAccessToken() {
+        TokenDto currentToken = adminToken.get();
 
-        if (adminToken != null && adminToken.accessToken() != null && !adminToken.isExpired()) {
-            return Mono.just(adminToken);
+        if (currentToken != null && currentToken.accessToken() != null && !currentToken.isExpired()) {
+            return Mono.just(currentToken);
         }
 
+        Mono<TokenDto> currentRequest = isRequestInProgress.get();
+
+        if (currentRequest != null) {
+            return currentRequest;
+        }
+
+        Mono<TokenDto> newRequest = createTokenRequest()
+                .doOnNext(adminToken::set)
+                .doFinally(signalType -> isRequestInProgress.set(null))
+                .cache();
+
+        if (isRequestInProgress.compareAndSet(null, newRequest)) {
+            return newRequest;
+        } else {
+            return isRequestInProgress.get();
+        }
+    }
+
+
+    private Mono<TokenDto> createTokenRequest() {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "password");
         form.add("client_id", "admin-cli");
@@ -42,7 +65,6 @@ public class KeycloakAdminTokenManager {
                 .retrieve()
                 .bodyToMono(TokenDto.class)
                 .map(token -> TokenDto.fromResponse(token.accessToken(), token.refreshToken(), token.expires(), token.tokenType()))
-                .doOnNext(tokenDto -> adminToken = tokenDto)
                 .onErrorResume(ex -> {
                     log.error("Failed to get admin access token", ex);
                     return Mono.error(new AdminTokenFailed("Failed to get admin access token: " + ex.getMessage()));

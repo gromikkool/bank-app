@@ -554,6 +554,28 @@
           "manage-account"
         ]
       }
+    },
+    {
+      "username": "roman@baeldung.com",
+      "email": "roman@baeldung.com",
+      "firstName": "Roman",
+      "lastName": "Baeldung",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "12345"
+        }
+      ],
+      "realmRoles": [
+        "default-roles-individuals"
+      ],
+      "clientRoles": {
+        "account": [
+          "view-profile",
+          "manage-account"
+        ]
+      }
     }
   ],
   "scopeMappings": [
@@ -595,7 +617,7 @@
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "publicClient": true,
       "frontchannelLogout": false,
@@ -778,7 +800,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "Sv7XYOdgXU27e5tkg84t8FoojF43XQPu",
       "redirectUris": [
         "http://localhost:8092/*",
         "https://oauth.pstmn.io/v1/callback"
