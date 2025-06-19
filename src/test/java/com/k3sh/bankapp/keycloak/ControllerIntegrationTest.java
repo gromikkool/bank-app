@@ -1,28 +1,29 @@
 package com.k3sh.bankapp.keycloak;
 
+import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.client.impl.KeycloakAdminTokenManager;
-import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
-import com.k3sh.bankapp.dto.LoginRequestDto;
-import com.k3sh.bankapp.dto.RefreshTokenRequestDto;
-import com.k3sh.bankapp.dto.TokenDto;
-import com.k3sh.bankapp.dto.UserDto;
+import com.k3sh.bankapp.dto.*;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
@@ -35,6 +36,9 @@ class ControllerIntegrationTest {
 
     @Autowired
     private KeycloakAdminTokenManager keycloakAdminTokenManager;
+
+    @Autowired
+    private KeycloakProperties keycloakProperties;
 
     @Container
     private static final KeycloakContainer keycloak = new KeycloakContainer()
@@ -123,12 +127,27 @@ class ControllerIntegrationTest {
                 .expectBody(TokenDto.class)
                 .consumeWith(response -> token.set(response.getResponseBody()));
 
-        // get user from keycloak
-
         // then
         Assertions.assertNotNull(token);
         Assertions.assertNotNull(token.get().accessToken());
         Assertions.assertNotNull(token.get().refreshToken());
+
+        TokenDto adminToken = keycloakAdminTokenManager.getAdminAccessToken().block();
+        Assertions.assertNotNull(adminToken);
+
+        Flux<Map<String, Object>> fluxUsers = WebClient.create()
+                .get()
+                .uri(keycloak.getAuthServerUrl() + "/admin/realms/" + keycloakProperties.getRealm() + "/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken.accessToken())
+                .retrieve()
+                .bodyToFlux(new ParameterizedTypeReference<>() {
+                });
+
+        StepVerifier.create(fluxUsers.collectList()).assertNext(users -> {
+            boolean userFound = users.stream()
+                    .anyMatch(user -> email.equalsIgnoreCase((String) user.get("email")));
+            Assertions.assertTrue(userFound, "Registered user should exist in Keycloak");
+        }).verifyComplete();
     }
 
     @Test
