@@ -24,7 +24,7 @@ public class KeycloakAdminTokenManager {
     private final AtomicReference<TokenDto> adminToken = new AtomicReference<>();
     private final AtomicReference<Mono<TokenDto>> isRequestInProgress = new AtomicReference<>();
 
-    public Mono<TokenDto> getAdminAccessToken() {
+    public Mono<TokenDto> getAdminAcccqessToken() {
         TokenDto currentToken = adminToken.get();
 
         if (currentToken != null && currentToken.accessToken() != null && !currentToken.isExpired()) {
