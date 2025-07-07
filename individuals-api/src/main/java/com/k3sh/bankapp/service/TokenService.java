@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface TokenService {
 
-    Mono<TokenDto> login(LoginRequestDto loginRequestDto);
+    Mono<TokenDto> login(LoginRequestDto loginRequestDto); //email and password
 
     Mono<TokenDto> refreshToken(String refreshToken);
 }

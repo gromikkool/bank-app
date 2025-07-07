@@ -1,6 +1,5 @@
 CREATE SCHEMA IF NOT EXISTS person;
-CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE person.countries
 (
@@ -36,18 +35,18 @@ CREATE TABLE person.users
     first_name VARCHAR(32),
     last_name  VARCHAR(32),
     filled     BOOLEAN,
-    address_id UUID REFERENCES person.addresses (id)
+    address_id UUID REFERENCES person.addresses (id),
+    constraint user_email_unique unique (email)
 );
 
 CREATE TABLE person.individuals
 (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         UUID UNIQUE REFERENCES person.users (id),
-    passport_number VARCHAR(32),
+    passport_number VARCHAR(32) ,
     phone_number    VARCHAR(32),
-    email           VARCHAR(32),
     verified_at     TIMESTAMP NOT NULL,
     archived_at     TIMESTAMP NOT NULL,
-    status          VARCHAR(32)
+    status          VARCHAR(32),
+    constraint individuals_passport_number_unique unique (passport_number)
 );
-

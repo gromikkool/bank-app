@@ -1,4 +1,3 @@
-
 buildscript {
     repositories {
         mavenCentral()
@@ -15,8 +14,32 @@ plugins {
     id 'org.springframework.boot' version "$springBootVersion"
     id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
     id "org.flywaydb.flyway" version "$flywayVersion"
+    id "org.openapi.generator" version "$openApiGeneratorVersion"
 }
 
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$projectDir/../openapi/openapi.yaml"
+    apiPackage = "com.k3sh.person.api"
+    modelPackage = "com.k3sh.common.model"
+    configOptions = [
+            "library"        : "spring-boot",
+            "interfaceOnly"  : "true",
+            "useSpringBoot3" : "true",
+            "openApiNullable": "false"
+    ]
+    globalProperties = [
+            "apis": ""
+    ]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["$projectDir/src/main/java", "$projectDir/build/generated/src/main/java", "$buildDir/generate-resources/main/src/main/java"]
+        }
+    }
+}
 group = appGroup
 version = appVersion
 
@@ -27,19 +50,8 @@ java {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
-}
-
-ext {
-    set('springCloudVersion', "2025.0.0")
-}
-
-flyway {
-    url = 'jdbc:postgresql://localhost:5433/person'
-    user = 'admin'
-    password = '123456789'
-    schemas = ['person']
-    cleanDisabled = false
 }
 
 dependencies {
@@ -48,21 +60,40 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-    runtimeOnly 'io.micrometer:micrometer-registry-otlp'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocOpenApiVersion"
+    implementation "com.k3sh:common:$commonVersion"
+    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-envers
+    implementation 'org.springframework.data:spring-data-envers'
+
+
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+//    implementation 'io.opentelemetry:opentelemetry-exporter-prometheus'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
-    implementation "org.postgresql:postgresql:${postgreVersion}"
+    implementation "org.postgresql:postgresql:$postgreVersion"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    // https://mvnrepository.com/artifact/org.mapstruct/mapstruct
+    implementation("org.mapstruct:mapstruct:$mapstructVersion")
+    // https://mvnrepository.com/artifact/org.mapstruct/mapstruct-processor
+    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
+tasks.named('compileJava') {
+    dependsOn(tasks.openApiGenerate)
+}
+
+tasks.register('generateSchema', JavaExec) {
+    group = "build"
+    description = "Generates schema.sql from Hibernate mappings"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set("com.example.HibernateSchemaExporter")
 }
 
 tasks.named('test') {

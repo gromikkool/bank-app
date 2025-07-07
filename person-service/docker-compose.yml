@@ -3,6 +3,7 @@ services:
     image: postgres:15
     container_name: postgres_person
     environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -18,8 +19,65 @@ services:
       start_period: 5s
     networks:
       - person_net
+  person-service:
+    build: .
+    container_name: person-service
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+      - "${APP_DEBUG_PORT}:${APP_DEBUG_PORT}"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      APP_PORT: ${APP_PORT}
+      APP_DEBUG_PORT: ${APP_DEBUG_PORT}
+    depends_on:
+      - postgres
+    networks:
+      - person_net
+      - shared_net
+  prometheus:
+    image: prom/prometheus:v3.4.2
+    container_name: prometheus
+    ports:
+      - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - person_net
+
+  grafana:
+    image: grafana/grafana:12.0.2
+    container_name: grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - person_net
+
+  jaeger:
+    image: jaegertracing/jaeger:2.5.0
+    container_name: jaeger
+    ports:
+      - "4318:4318"
+      - "4317:4317"
+      - "6832:6832"
+      - "5778:5778"
+      - "16686:16686"
+    restart: unless-stopped
+    environment:
+      OTEL_ENABLED: true
+    networks:
+      - person_net
+      - shared_net
 
 networks:
   person_net:
+  shared_net:
+    external: true
 volumes:
   postgres_data:

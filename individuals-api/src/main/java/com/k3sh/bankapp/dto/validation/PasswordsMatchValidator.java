@@ -1,7 +1,6 @@
 package com.k3sh.bankapp.dto.validation;
 
 import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
-import com.k3sh.bankapp.dto.UserDto;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.extern.slf4j.Slf4j;

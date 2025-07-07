@@ -44,9 +44,9 @@ services:
     networks:
       - keycloak_net
 
-  bank-app:
-    image: bank-app
-    container_name: bank-app
+  individuals-api:
+    image: individuals-api
+    container_name: individuals-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -59,8 +59,11 @@ services:
       - keycloak
     networks:
       - keycloak_net
+      - shared_net
 
 networks:
   keycloak_net:
+  shared_net:
+    external: true
 volumes:
   postgres_data:

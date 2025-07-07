@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
+    id "org.openapi.generator" version "$openApiGeneratorVersion"
 }
 
 version = project.property("version")
@@ -32,6 +33,20 @@ repositories {
     mavenCentral()
 }
 
+//openApiGenerate {
+//    generatorName = "java"
+//    inputSpec = "http://localhost:8092/v3/api-docs" // or use a URL
+//    outputDir = "${layout.buildDirectory}/generated"
+//    apiPackage = "com.k3sh.client.api"
+//    modelPackage = "com.k3sh.client.model"
+//    invokerPackage = "com.k3sh.client.invoker"
+//    library = "feign"
+//    configOptions = [
+//            dateLibrary: "java8",
+//            useFeignClientUrl: "true"
+//    ]
+//}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -41,11 +56,18 @@ dependencies {
     implementation "ch.qos.logback.contrib:logback-json-classic:$logbackVersion"
     implementation "ch.qos.logback.contrib:logback-jackson:$logbackVersion"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springOpenApiVersion"
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:$feignClientVersion")
+    implementation "com.k3sh:common:${commonVersion}"
+
+    implementation "io.github.openfeign:feign-micrometer:$feignMicrometerVersion"
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'

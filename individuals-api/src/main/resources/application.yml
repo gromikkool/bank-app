@@ -25,8 +25,19 @@ spring:
 server:
   port: ${BANK_APP_PORT}
 
+feign:
+  url: http://localhost:8777/
+
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
   realm: ${KEYCLOAK_REALM}
   realm-admin-user: ${KEYCLOAK_REALM_ADMIN_USER}
   realm-admin-password: ${KEYCLOAK_REALM_ADMIN_PASSWORD}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces

@@ -1,0 +1,286 @@
+openapi: 3.0.1
+info:
+  title: Person Service
+  version: 1.0.0
+  description: Person Service is a microservice that provides user registration and authentication.
+servers:
+  - url: api/v1
+paths:
+  /individuals:
+    get:
+      summary: Get all individuals
+      tags:
+        - individual
+      operationId: getAllIndividuals
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IndividualDto"
+        "404":
+          description: Individual not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create a new individual
+      tags:
+        - individual
+      operationId: createIndividual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IndividualCreateDto"
+            x-constraints: "@PasswordsMatch"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndividualDto"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /individuals/{uuid}:
+    delete:
+      summary: Delete a individual
+      tags:
+        - user
+      operationId: deleteIndividual
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndividualDto"
+    get:
+      summary: Get a individual by uuid
+      tags:
+        - individual
+      operationId: getIndividualById
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndividualDto"
+        "404":
+          description: Individual not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /individuals/email:
+    get:
+      summary: Get an individual by email
+      tags:
+        - user
+      operationId: getIndividualByEmail
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndividualDto"
+        "404":
+          description: Individual not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+
+
+components:
+  schemas:
+    IndividualDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        passportNumber:
+          type: string
+        phoneNumber:
+          type: string
+        status:
+          type: string
+        verifiedAt:
+          type: string
+          format: date-time
+        archivedAt:
+          type: string
+          format: date-time
+        user:
+          $ref: "#/components/schemas/UserDto"
+
+    IndividualCreateDto:
+      type: object
+      required:
+        - passportNumber
+        - phoneNumber
+        - status
+        - user
+      properties:
+        passportNumber:
+          type: string
+        phoneNumber:
+          type: string
+        status:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserCreateDto"
+
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        firstName:
+          type: string
+        lastName:
+          type: string
+        address:
+          $ref: "#/components/schemas/AddressDto"
+    UserCreateDto:
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+        - address
+      properties:
+        email:
+          type: string
+          nullable: false
+        password:
+          type: string
+          nullable: false
+        confirmPassword:
+          type: string
+          nullable: false
+        firstName:
+          type: string
+          nullable: false
+        lastName:
+          type: string
+          nullable: false
+        address:
+          $ref: "#/components/schemas/AddressCreateDto"
+
+    AddressCreateDto:
+      type: object
+      properties:
+        city:
+          type: string
+        streetAddress:
+          type: string
+        state:
+          type: string
+        zipCode:
+          type: string
+        countryAlpha2:
+          type: string
+        countryAlpha3:
+          type: string
+    AddressDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        address:
+          type: string
+        zipCode:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        archived:
+          type: string
+          format: date-time
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        country:
+          $ref: "#/components/schemas/CountryDto"
+    CountryDto:
+      type: object
+      properties:
+        name:
+          type: string
+        alpha2:
+          type: string
+        alpha3:
+          type: string
+        status:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        status:
+          type: integer

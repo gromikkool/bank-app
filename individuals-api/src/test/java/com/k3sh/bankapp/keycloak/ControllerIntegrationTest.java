@@ -112,7 +112,7 @@ class ControllerIntegrationTest {
         String email = "test.user@baeldung.com";
         String password = "super-secret";
 
-        AuthRegistrationRequestDto request = new AuthRegistrationRequestDto(email, password, password);
+        AuthRegistrationRequestDto request = new AuthRegistrationRequestDto(email, password, password, "Roman", "Baeldung");
 
         AtomicReference<TokenDto> token = new AtomicReference<>();
 
@@ -155,7 +155,7 @@ class ControllerIntegrationTest {
         String email = "dup@baeldung.com";
         String password = "secret";
 
-        AuthRegistrationRequestDto request = new AuthRegistrationRequestDto(email, password, password);
+        AuthRegistrationRequestDto request = new AuthRegistrationRequestDto(email, password, password, "Roman", "Baeldung");
 
         webTestClient.post()
                 .uri("/api/v1/auth/registration")
@@ -185,9 +185,9 @@ class ControllerIntegrationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(UserDto.class)
+                .expectBody(KeycloakUserDto.class)
                 .consumeWith(response -> {
-                    UserDto user = response.getResponseBody();
+                    KeycloakUserDto user = response.getResponseBody();
                     Assertions.assertNotNull(user);
                     Assertions.assertEquals("roman@baeldung.com", user.email());
                 });
