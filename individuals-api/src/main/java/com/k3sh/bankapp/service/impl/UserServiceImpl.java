@@ -3,16 +3,16 @@ package com.k3sh.bankapp.service.impl;
 import com.k3sh.bankapp.client.ExAuthApiClient;
 import com.k3sh.bankapp.client.feign.PersonServiceFeignClient;
 import com.k3sh.bankapp.dto.AuthRegistrationRequestDto;
-import com.k3sh.bankapp.dto.KeycloakUserDto;
 import com.k3sh.bankapp.dto.LoginRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.bankapp.exception.CreateUserException;
+import com.k3sh.bankapp.exception.KeycloakRegistrationException;
+import com.k3sh.bankapp.exception.PartialRollbackException;
 import com.k3sh.bankapp.exception.UserAlreadyExists;
 import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
 import com.k3sh.common.model.IndividualCreateDto;
 import com.k3sh.common.model.IndividualDto;
-import com.k3sh.common.model.UserDto;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
 
      @Override //todo: confirm pass
      public Mono<TokenDto> registration(IndividualCreateDto requestDto) {
-          return Mono.fromCallable(() -> personServiceFeignClient.createUser(requestDto))
+          return Mono.fromCallable(() -> personServiceFeignClient.createIndividual(requestDto))
                   .subscribeOn(Schedulers.boundedElastic())
                   .onErrorResume(FeignException.class, ex -> {
                        if (ex.status() == 409) {
@@ -52,15 +52,15 @@ public class UserServiceImpl implements UserService {
                                   ))
                           //todo: rollback rename user
                                   .onErrorResume(ex -> {
-                                               log.error("Delete user with id {} from person-service", individual.getId());
-                                               return Mono.fromCallable(() -> personServiceFeignClient.deleteUser(individual.getId()))
+                                               log.error("Delete user with id {} from person-service", individual.getBody().getId());
+                                               return Mono.fromCallable(() -> personServiceFeignClient.deleteIndividual(individual.getBody().getId()))
                                                        .subscribeOn(Schedulers.boundedElastic())
                                                        .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
                                                        .onErrorResume(deleteEx -> {
-                                                            log.error("Failed to delete user with id {} after registration failed", individual.getId(), deleteEx);
-                                                            return Mono.error(new IllegalStateException("User partially created and could not be rolled back", deleteEx));
+                                                            log.error("Failed to delete user with id {} after registration failed", individual.getBody().getId(), deleteEx);
+                                                            return Mono.error(new PartialRollbackException("User partially created and could not be rolled back", deleteEx));
                                                        })
-                                                       .then(Mono.error(ex));
+                                                       .then(Mono.error(new KeycloakRegistrationException("Keycloak registration failed", ex)));
                                           }
                                   )
                                   .then(tokenService.login(new LoginRequestDto(requestDto.getUser().getEmail(), requestDto.getUser().getPassword())))
@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
      public Mono<IndividualDto> me(String accessToken) {
           return apiClient.me(accessToken).
                   flatMap(keycloakUser ->
-                          Mono.fromCallable(() -> personServiceFeignClient.getUserByEmail(keycloakUser.email()))
+                          Mono.fromCallable(() -> personServiceFeignClient.getIndividualByEmail(keycloakUser.email()).getBody())
                                   .subscribeOn(Schedulers.boundedElastic()));
 
      }

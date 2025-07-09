@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
           log.error("Entity not found: {}", ex.getMessage(), ex);
           ErrorResponse errorResponse = new ErrorResponse();
           errorResponse.setMessage(ex.getMessage());
-          errorResponse.setCode("USER_NOT_FOUND");
+          errorResponse.setCode("ENTITY_NOT_FOUND");
           errorResponse.status(HttpStatus.NOT_FOUND.value());
           return ResponseEntity
                   .status(HttpStatus.NOT_FOUND)

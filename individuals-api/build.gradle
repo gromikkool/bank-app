@@ -31,21 +31,11 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("http://localhost:8081/repository/maven-releases/")
+        allowInsecureProtocol = true
+    }
 }
-
-//openApiGenerate {
-//    generatorName = "java"
-//    inputSpec = "http://localhost:8092/v3/api-docs" // or use a URL
-//    outputDir = "${layout.buildDirectory}/generated"
-//    apiPackage = "com.k3sh.client.api"
-//    modelPackage = "com.k3sh.client.model"
-//    invokerPackage = "com.k3sh.client.invoker"
-//    library = "feign"
-//    configOptions = [
-//            dateLibrary: "java8",
-//            useFeignClientUrl: "true"
-//    ]
-//}
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -56,8 +46,8 @@ dependencies {
     implementation "ch.qos.logback.contrib:logback-json-classic:$logbackVersion"
     implementation "ch.qos.logback.contrib:logback-jackson:$logbackVersion"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springOpenApiVersion"
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:$feignClientVersion")
-    implementation "com.k3sh:common:${commonVersion}"
+    implementation "org.springframework.cloud:spring-cloud-starter-openfeign:$feignClientVersion"
+    implementation "com.k3sh:person-service-client:$personServiceClientVersion"
 
     implementation "io.github.openfeign:feign-micrometer:$feignMicrometerVersion"
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
@@ -65,21 +55,22 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.projectlombok:lombok'
 
-    testImplementation "org.junit.jupiter:junit-jupiter:5.8.1"
-    testImplementation "org.testcontainers:junit-jupiter:1.21.1"
-    testImplementation "org.testcontainers:testcontainers:${testcontainersVersion}"
-
+    testImplementation "org.junit.jupiter:junit-jupiter:$testJUnitJupiterVersion"
+    testImplementation "org.testcontainers:junit-jupiter:$testJUnitJupiterTestContainerVersion"
+    testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
 
 
     testImplementation "com.github.dasniko:testcontainers-keycloak:$testcontainersKeycloakVersion"
+    testImplementation "org.testcontainers:postgresql:1.20.0"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

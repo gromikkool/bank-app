@@ -12,6 +12,7 @@ import com.k3sh.person.service.CountryService;
 import com.k3sh.person.service.IndividualService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.stream.StreamSupport;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class IndividualServiceImpl implements IndividualService {
      private final IndividualRepository individualRepository;
      private final CountryService countryService;
@@ -42,7 +44,10 @@ public class IndividualServiceImpl implements IndividualService {
           UUID uuid = UUID.fromString(id);
           return individualMapper
                   .toDto(individualRepository.findById(uuid)
-                          .orElseThrow(() -> new EntityNotFoundException("User with id " + id + " not found")));
+                          .orElseThrow(() -> {
+                               log.info("User with id {} not found", id);
+                               return new EntityNotFoundException("User with id " + id + " not found");
+                          }));
      }
 
      private boolean isUserWithEmailExists(String email) {
@@ -77,7 +82,10 @@ public class IndividualServiceImpl implements IndividualService {
      @Transactional
      public IndividualDto deleteIndividual(UUID uuid) {
           Individual user = individualRepository.findById(uuid)
-                  .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + uuid));
+                  .orElseThrow(() -> {
+                       log.info("User with uuid {} not found for deletion", uuid);
+                       return new EntityNotFoundException("User not found with id: " + uuid);
+                  });
           individualRepository.delete(user);
           return individualMapper.toDto(user);
      }
@@ -85,6 +93,9 @@ public class IndividualServiceImpl implements IndividualService {
      @Override
      public IndividualDto getIndividualByEmail(String email) {
           return individualMapper.toDto(individualRepository.findByUserEmail(email)
-                  .orElseThrow(() -> new EntityNotFoundException("User with email " + email + " not found")));
+                  .orElseThrow(() -> {
+                       log.info("User with email {} not found", email);
+                       return new EntityNotFoundException("User with email " + email + " not found");
+                  }));
      }
 }

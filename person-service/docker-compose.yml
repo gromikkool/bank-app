@@ -75,9 +75,20 @@ services:
       - person_net
       - shared_net
 
+  nexus:
+    image: sonatype/nexus3
+    restart: always
+    volumes:
+      - "nexus-data:/sonatype-work"
+    ports:
+      - "8081:8081"
+      - "8085:8085"
+
+
 networks:
   person_net:
   shared_net:
     external: true
 volumes:
   postgres_data:
+  nexus-data:

@@ -1,8 +1,8 @@
 package com.k3sh.person.rest;
 
+import com.k3sh.common.api.IndividualsApi;
 import com.k3sh.common.model.IndividualCreateDto;
 import com.k3sh.common.model.IndividualDto;
-import com.k3sh.person.api.IndividualsApi;
 import com.k3sh.person.service.IndividualService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;

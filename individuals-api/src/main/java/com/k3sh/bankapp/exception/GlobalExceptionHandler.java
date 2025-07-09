@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -86,6 +88,18 @@ public class GlobalExceptionHandler {
                           "USER_ALREADY_EXISTS",
                           HttpStatus.CONFLICT.value()
                   ));
+     }
+
+     @ExceptionHandler(KeycloakRegistrationException.class)
+     public ResponseEntity<ErrorResponse> handleKeycloakFailure(KeycloakRegistrationException ex) {
+          return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                  .body(ErrorResponse.of(ex.getMessage(), "Keycloak registration failed", HttpStatus.BAD_GATEWAY.value()));
+     }
+
+     @ExceptionHandler(PartialRollbackException.class)
+     public ResponseEntity<ErrorResponse> handleRollbackFailure(PartialRollbackException ex) {
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                  .body(ErrorResponse.of(ex.getMessage(), "Partial rollback failed", HttpStatus.INTERNAL_SERVER_ERROR.value()));
      }
 
 }

@@ -9,37 +9,14 @@ buildscript {
     }
 }
 
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version "$springBootVersion"
     id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
     id "org.flywaydb.flyway" version "$flywayVersion"
-    id "org.openapi.generator" version "$openApiGeneratorVersion"
 }
 
-openApiGenerate {
-    generatorName = "spring"
-    inputSpec = "$projectDir/../openapi/openapi.yaml"
-    apiPackage = "com.k3sh.person.api"
-    modelPackage = "com.k3sh.common.model"
-    configOptions = [
-            "library"        : "spring-boot",
-            "interfaceOnly"  : "true",
-            "useSpringBoot3" : "true",
-            "openApiNullable": "false"
-    ]
-    globalProperties = [
-            "apis": ""
-    ]
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs = ["$projectDir/src/main/java", "$projectDir/build/generated/src/main/java", "$buildDir/generate-resources/main/src/main/java"]
-        }
-    }
-}
 group = appGroup
 version = appVersion
 
@@ -61,9 +38,9 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocOpenApiVersion"
-    implementation "com.k3sh:common:$commonVersion"
     // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-envers
     implementation 'org.springframework.data:spring-data-envers'
+    implementation project(":person-service-client")
 
 
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
@@ -86,15 +63,8 @@ dependencies {
 }
 
 tasks.named('compileJava') {
-    dependsOn(tasks.openApiGenerate)
 }
 
-tasks.register('generateSchema', JavaExec) {
-    group = "build"
-    description = "Generates schema.sql from Hibernate mappings"
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass.set("com.example.HibernateSchemaExporter")
-}
 
 tasks.named('test') {
     useJUnitPlatform()
