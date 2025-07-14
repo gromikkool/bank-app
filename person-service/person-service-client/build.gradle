@@ -10,7 +10,7 @@ version = "1.0.0"
 
 openApiGenerate {
     generatorName = "spring"
-    inputSpec = "$projectDir/../../openapi/openapi.yaml"
+    inputSpec = "$rootDir/openapi/openapi.yaml"
     outputDir = "$buildDir/generated"
     modelPackage = "com.k3sh.common.model"
     apiPackage = "com.k3sh.common.api"

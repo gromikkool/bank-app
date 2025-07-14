@@ -359,7 +359,6 @@ class ControllerIntegrationTest {
 
      @Test
      void registration_shouldRollback_whenKeycloakUnavailable_andUserShouldBeDeleted() {
-          // Arrange
           String email = "rollback-api@example.com";
           IndividualCreateDto request = getIndividualCreateDto(email);
 
