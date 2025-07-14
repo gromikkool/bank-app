@@ -38,27 +38,27 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocOpenApiVersion"
-    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-envers
     implementation 'org.springframework.data:spring-data-envers'
     implementation project(":person-service-client")
 
 
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
     implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
-//    implementation 'io.opentelemetry:opentelemetry-exporter-prometheus'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     implementation "org.postgresql:postgresql:$postgreVersion"
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
+    testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    testImplementation "org.testcontainers:junit-jupiter:$testJUnitJupiterTestContainerVersion"
+    testImplementation "org.testcontainers:postgresql:$testcontainersPostgreVersion"
 
 
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    // https://mvnrepository.com/artifact/org.mapstruct/mapstruct
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
-    // https://mvnrepository.com/artifact/org.mapstruct/mapstruct-processor
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 
 }

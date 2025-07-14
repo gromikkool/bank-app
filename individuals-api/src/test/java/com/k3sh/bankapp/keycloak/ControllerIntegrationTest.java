@@ -1,17 +1,22 @@
 package com.k3sh.bankapp.keycloak;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.k3sh.bankapp.client.ExAuthApiClient;
 import com.k3sh.bankapp.client.KeycloakProperties;
 import com.k3sh.bankapp.client.impl.KeycloakAdminTokenManager;
-import com.k3sh.bankapp.dto.*;
+import com.k3sh.bankapp.dto.LoginRequestDto;
+import com.k3sh.bankapp.dto.RefreshTokenRequestDto;
+import com.k3sh.bankapp.dto.TokenDto;
 import com.k3sh.common.model.AddressCreateDto;
 import com.k3sh.common.model.IndividualCreateDto;
 import com.k3sh.common.model.IndividualDto;
 import com.k3sh.common.model.UserCreateDto;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,22 +28,31 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.wiremock.spring.ConfigureWireMock;
+import org.wiremock.spring.EnableWireMock;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+@EnableWireMock(value = {
+        @ConfigureWireMock(
+                port = 8089,
+                name = "person-service",
+                baseUrlProperties = "feign.url"
+        )
+})
 @Testcontainers
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -55,7 +69,12 @@ class ControllerIntegrationTest {
      @Autowired
      private KeycloakProperties keycloakProperties;
 
-     private static final Network network = Network.newNetwork();
+     @MockitoSpyBean
+     private ExAuthApiClient apiClientSpy;
+
+     @Autowired
+     private ObjectMapper objectMapper;
+
 
      private static final KeycloakContainer keycloak = new KeycloakContainer()
              .withRealmImportFile("keycloak/realm-export.json")
@@ -63,41 +82,9 @@ class ControllerIntegrationTest {
              .withAdminPassword("123")
              .withReuse(false);
 
-     private static final PostgreSQLContainer<?> personServicePostgre = new PostgreSQLContainer<>("postgres:15")
-             .withDatabaseName("person")
-             .withUsername("test")
-             .withPassword("test")
-             .withNetwork(network)
-             .withNetworkAliases("postgres")
-             .withReuse(false);
-
-     private static final GenericContainer<?> personService = new GenericContainer<>("person-service:latest")
-             .withExposedPorts(8080)
-             .withNetwork(network)
-             .waitingFor(Wait.forHttp("/actuator/health").forStatusCode(200))
-             .withReuse(false);
-
      @BeforeAll
      static void startContainers() {
           keycloak.start();
-          personServicePostgre.start();
-          personService
-                  .withEnv("APP_PORT", "8080")
-                  .withEnv("POSTGRES_HOST", "postgres")
-                  .withEnv("POSTGRES_PORT", String.valueOf(5432))
-                  .withEnv("POSTGRES_DB", "person")
-                  .withEnv("POSTGRES_USER", "test")
-                  .withEnv("POSTGRES_PASSWORD", "test")
-                  .withEnv("APP_DEBUG_PORT", "5006")
-                  .withEnv("PROMETHEUS_PORT", "9090")
-                  .withEnv("GRAFANA_PORT", "3001");
-          personService.start();
-     }
-
-     @AfterEach
-     void printLogs() {
-          log.info("Person Service Logs:");
-          log.info(personService.getLogs());
      }
 
      @DynamicPropertySource
@@ -108,14 +95,12 @@ class ControllerIntegrationTest {
           registry.add("spring.security.oauth2.client.registration.keycloak.client-secret", () -> "Sv7XYOdgXU27e5tkg84t8FoojF43XQPu");
           registry.add("keycloak.admin-user", () -> "admin");
           registry.add("keycloak.admin-password", () -> "123");
-          registry.add("feign.url", () -> "http://" + personService.getHost() + ":" + personService.getFirstMappedPort());
+          registry.add("feign.url", () -> "http://localhost:8089");
      }
 
      @Test
      void testContainersStart() {
           System.out.println("Keycloak running at: " + keycloak.getAuthServerUrl());
-          System.out.println("PostgreSQL running at: " + personServicePostgre.getJdbcUrl());
-          System.out.println("Person Service running at: " + personService.getHost() + ":" + personService.getFirstMappedPort());
           Assertions.assertTrue(keycloak.isRunning());
      }
 
@@ -141,10 +126,18 @@ class ControllerIntegrationTest {
 
      @Test
      void login_shouldReturnToken() {
-          String email = "roman@baeldung.com";
-          String password = "12345";
+          stubFor(post(urlEqualTo("/api/v1/auth/login"))
+                  .withRequestBody(containing("roman@baeldung.com"))
+                  .willReturn(aResponse()
+                          .withHeader("Content-Type", "application/json")
+                          .withBody("""
+                                      {
+                                        "accessToken": "mock-access-token",
+                                        "refreshToken": "mock-refresh-token"
+                                      }
+                                  """)));
 
-          LoginRequestDto request = new LoginRequestDto(email, password);
+          LoginRequestDto request = new LoginRequestDto("roman@baeldung.com", "12345");
 
           webTestClient.post()
                   .uri("/api/v1/auth/login")
@@ -167,6 +160,21 @@ class ControllerIntegrationTest {
           // given
           String email = "test.user@baeldung.com";
           IndividualCreateDto request = getIndividualCreateDto(email);
+          String userId = UUID.randomUUID().toString();
+
+          // mock: createIndividual
+          stubFor(post(urlEqualTo("/individuals"))
+                  .willReturn(okJson("""
+                          {
+                            "body": {
+                              "id": "%s"
+                            }
+                          }
+                          """.formatted(userId))));
+
+          // mock: deleteIndividual (на случай ошибки)
+          stubFor(delete(urlEqualTo("/individuals" + userId))
+                  .willReturn(aResponse().withStatus(200)));
 
           AtomicReference<TokenDto> token = new AtomicReference<>();
 
@@ -182,13 +190,15 @@ class ControllerIntegrationTest {
                   .consumeWith(response -> token.set(response.getResponseBody()));
 
           // then
-          Assertions.assertNotNull(token);
+          Assertions.assertNotNull(token.get());
           Assertions.assertNotNull(token.get().accessToken());
           Assertions.assertNotNull(token.get().refreshToken());
 
+          // Admin access token
           TokenDto adminToken = keycloakAdminTokenManager.getAdminAccessToken().block();
           Assertions.assertNotNull(adminToken);
 
+          // Check Keycloak for created user
           Flux<Map<String, Object>> fluxUsers = WebClient.create()
                   .get()
                   .uri(keycloak.getAuthServerUrl() + "/admin/realms/" + keycloakProperties.getRealm() + "/users")
@@ -202,6 +212,47 @@ class ControllerIntegrationTest {
                        .anyMatch(user -> email.equalsIgnoreCase((String) user.get("email")));
                Assertions.assertTrue(userFound, "Registered user should exist in Keycloak");
           }).verifyComplete();
+     }
+
+
+     @Test
+     void registration_shouldRollbackAndDeleteUser_ifKeycloakFails() throws JsonProcessingException {
+          // given
+          String email = "fail.user@baeldung.com";
+          IndividualCreateDto request = getIndividualCreateDto(email);
+          UUID userUUID = UUID.randomUUID();
+
+          // создаём настоящий DTO
+          IndividualDto individualDto = new IndividualDto();
+          individualDto.setId(userUUID);
+          // + другие поля по необходимости (firstName, lastName...)
+
+          String bodyJson = objectMapper.writeValueAsString(individualDto);
+
+          stubFor(post(urlEqualTo("/individuals"))
+                  .willReturn(okJson("""
+                     {
+                       "body": %s
+                     }
+                     """.formatted(bodyJson))));
+
+          stubFor(delete(urlEqualTo("/individuals/" + userUUID))
+                  .willReturn(aResponse().withStatus(200)));
+
+          // мок Keycloak через spy
+          Mockito.doReturn(Mono.error(new RuntimeException("Simulated Keycloak failure")))
+                  .when(apiClientSpy).registration(Mockito.any());
+
+          // when
+          webTestClient.post()
+                  .uri("/api/v1/auth/registration")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .bodyValue(request)
+                  .exchange()
+                  .expectStatus().is5xxServerError();
+
+          // then
+          verify(deleteRequestedFor(urlEqualTo("/individuals/" + userUUID)));
      }
 
      private static IndividualCreateDto getIndividualCreateDto(String email) {
@@ -357,29 +408,4 @@ class ControllerIntegrationTest {
                   .expectBody();
      }
 
-     @Test
-     void registration_shouldRollback_whenKeycloakUnavailable_andUserShouldBeDeleted() {
-          String email = "rollback-api@example.com";
-          IndividualCreateDto request = getIndividualCreateDto(email);
-
-          keycloak.stop();
-          log.warn("Keycloak OFF — simulate failure");
-
-          // Act
-          webTestClient.post()
-                  .uri("/api/v1/auth/registration")
-                  .bodyValue(request)
-                  .exchange()
-                  .expectStatus().isEqualTo(HttpStatus.BAD_GATEWAY);
-
-          webTestClient.get()
-                  .uri(uriBuilder -> uriBuilder
-                          .host(personService.getHost())
-                          .port(personService.getFirstMappedPort())
-                          .path("/individuals/email")
-                          .queryParam("email", email)
-                          .build())
-                  .exchange()
-                  .expectStatus().isNotFound();
-     }
 }

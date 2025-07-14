@@ -33,6 +33,7 @@ repositories {
     mavenCentral()
     maven {
         url = uri("http://localhost:8081/repository/maven-releases/")
+        // login and password
         allowInsecureProtocol = true
     }
 }
@@ -67,6 +68,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter:$testJUnitJupiterVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testJUnitJupiterTestContainerVersion"
     testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    implementation "org.wiremock.integrations:wiremock-spring-boot:$testWireMockVersion"
 
 
     testImplementation "com.github.dasniko:testcontainers-keycloak:$testcontainersKeycloakVersion"

@@ -32,10 +32,10 @@ public class UserServiceImpl implements UserService {
      private final TokenService tokenService;
      private final PersonServiceFeignClient personServiceFeignClient;
 
-     @Override //todo: confirm pass
+     @Override //todo: confirm pass, common uid for user keycloak attribute uuid
      public Mono<TokenDto> registration(IndividualCreateDto requestDto) {
           return Mono.fromCallable(() -> personServiceFeignClient.createIndividual(requestDto))
-                  .subscribeOn(Schedulers.boundedElastic())
+                  .subscribeOn(Schedulers.boundedElastic()) // read about this
                   .onErrorResume(FeignException.class, ex -> {
                        if (ex.status() == 409) {
                             return Mono.error(new UserAlreadyExists("User with this email already exists"));
@@ -67,6 +67,7 @@ public class UserServiceImpl implements UserService {
                   );
      }
 
+     //todo: UUID should be added in token
      @Override
      public Mono<IndividualDto> me(String accessToken) {
           return apiClient.me(accessToken).
@@ -77,3 +78,5 @@ public class UserServiceImpl implements UserService {
      }
 
 }
+
+// контекстная диаграмма, sequence диаграмма, общий docker-compose, cmake.
