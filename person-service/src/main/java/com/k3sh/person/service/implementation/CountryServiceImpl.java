@@ -1,9 +1,8 @@
 package com.k3sh.person.service.implementation;
 
-import com.k3sh.person.service.CountryService;
 import com.k3sh.person.entity.Country;
 import com.k3sh.person.repository.CountryRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.k3sh.person.service.CountryService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
