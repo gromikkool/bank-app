@@ -8,11 +8,9 @@ import com.k3sh.bankapp.client.impl.KeycloakAdminTokenManager;
 import com.k3sh.bankapp.dto.LoginRequestDto;
 import com.k3sh.bankapp.dto.RefreshTokenRequestDto;
 import com.k3sh.bankapp.dto.TokenDto;
-import com.k3sh.common.model.AddressCreateDto;
-import com.k3sh.common.model.IndividualCreateDto;
-import com.k3sh.common.model.IndividualDto;
-import com.k3sh.common.model.UserCreateDto;
+import com.k3sh.common.model.*;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -156,24 +154,19 @@ class ControllerIntegrationTest {
      }
 
      @Test
-     void registration_shouldCreateUserAndReturnValidToken() {
+     void registration_shouldCreateUserAndReturnValidToken() throws JsonProcessingException {
           // given
           String email = "test.user@baeldung.com";
           IndividualCreateDto request = getIndividualCreateDto(email);
-          String userId = UUID.randomUUID().toString();
+          UUID userUUID = UUID.randomUUID();
+          IndividualDto individualDto = getResponseIndividualDto(userUUID, email);
 
-          // mock: createIndividual
+          String bodyJson = objectMapper.writeValueAsString(individualDto);
           stubFor(post(urlEqualTo("/individuals"))
-                  .willReturn(okJson("""
-                          {
-                            "body": {
-                              "id": "%s"
-                            }
-                          }
-                          """.formatted(userId))));
+                  .willReturn(okJson(bodyJson)));
 
           // mock: deleteIndividual (на случай ошибки)
-          stubFor(delete(urlEqualTo("/individuals" + userId))
+          stubFor(delete(urlEqualTo("/individuals/" + userUUID))
                   .willReturn(aResponse().withStatus(200)));
 
           AtomicReference<TokenDto> token = new AtomicReference<>();
@@ -219,27 +212,18 @@ class ControllerIntegrationTest {
      void registration_shouldRollbackAndDeleteUser_ifKeycloakFails() throws JsonProcessingException {
           // given
           String email = "fail.user@baeldung.com";
+
           IndividualCreateDto request = getIndividualCreateDto(email);
           UUID userUUID = UUID.randomUUID();
-
-          // создаём настоящий DTO
-          IndividualDto individualDto = new IndividualDto();
-          individualDto.setId(userUUID);
-          // + другие поля по необходимости (firstName, lastName...)
+          IndividualDto individualDto = getResponseIndividualDto(userUUID, email);
 
           String bodyJson = objectMapper.writeValueAsString(individualDto);
-
           stubFor(post(urlEqualTo("/individuals"))
-                  .willReturn(okJson("""
-                     {
-                       "body": %s
-                     }
-                     """.formatted(bodyJson))));
+                  .willReturn(okJson(bodyJson)));
 
           stubFor(delete(urlEqualTo("/individuals/" + userUUID))
                   .willReturn(aResponse().withStatus(200)));
 
-          // мок Keycloak через spy
           Mockito.doReturn(Mono.error(new RuntimeException("Simulated Keycloak failure")))
                   .when(apiClientSpy).registration(Mockito.any());
 
@@ -253,6 +237,21 @@ class ControllerIntegrationTest {
 
           // then
           verify(deleteRequestedFor(urlEqualTo("/individuals/" + userUUID)));
+     }
+
+     private static IndividualDto getResponseIndividualDto(UUID userUUID, String email) {
+          String firstName = "Roman";
+          String lastName = "Baeldung";
+
+          IndividualDto individualDto = new IndividualDto();
+          individualDto.setId(userUUID);
+
+          UserDto userDto = new UserDto();
+          userDto.setEmail(email);
+          userDto.setFirstName(firstName);
+          userDto.setLastName(lastName);
+          individualDto.setUser(userDto);
+          return individualDto;
      }
 
      private static IndividualCreateDto getIndividualCreateDto(String email) {
@@ -269,31 +268,48 @@ class ControllerIntegrationTest {
           user.setPassword(password);
           user.setConfirmPassword(password);
 
-          IndividualCreateDto request = new IndividualCreateDto(passportNumber, "123456789", "ACTIVE", user);
-          return request;
+          return new IndividualCreateDto(passportNumber, "123456789", "ACTIVE", user);
      }
 
      @Test
-     void registration_withDuplicateEmail_shouldReturn409() {
+     void registration_withDuplicateEmail_shouldReturn409() throws JsonProcessingException {
+          // given
           String email = "dup1@baeldung.com";
-
           IndividualCreateDto request = getIndividualCreateDto(email);
 
+          // Simulate duplicate email scenario - typically this would be a 409 response
+          stubFor(post(urlEqualTo("/individuals"))
+                  .willReturn(aResponse()
+                          .withStatus(409)
+                          .withHeader("Content-Type", "application/json")
+                          .withBody("""
+                                  {
+                                    "message": "User with email already exists",
+                                    "errorCode": "DUPLICATE_EMAIL"
+                                  }
+                                  """)));
+
+          // when
           webTestClient.post()
                   .uri("/api/v1/auth/registration")
                   .contentType(MediaType.APPLICATION_JSON)
                   .bodyValue(request)
                   .exchange()
                   .expectStatus().isEqualTo(HttpStatus.CONFLICT);
+
+          // then
+          verify(postRequestedFor(urlEqualTo("/individuals")));
+          // Verify that delete is NOT called since user creation failed
+          verify(0, deleteRequestedFor(urlMatching("/individuals/.*")));
      }
 
      @Test
-     void me_shouldReturnCurrentUserInfo() {
-
-          String email = "test.user@baeldung.com";
-          String password = "super-secret";
+     void me_shouldReturnCurrentUserInfo() throws JsonProcessingException {
+          String email = "jane.doe@baeldung.com";
+          String password = "123";
 
           LoginRequestDto request = new LoginRequestDto(email, password);
+          UUID knownUserUuid = UUID.fromString("12345678-1234-1234-1234-123456789012");
 
           TokenDto tokenDto = webTestClient.post()
                   .uri("/api/v1/auth/login")
@@ -305,6 +321,13 @@ class ControllerIntegrationTest {
           Assertions.assertNotNull(tokenDto);
           Assertions.assertNotNull(tokenDto.accessToken());
 
+          IndividualDto individualDto = getResponseIndividualDto(knownUserUuid, email);
+          String bodyJson = objectMapper.writeValueAsString(individualDto);
+
+          stubFor(get(urlEqualTo("/individuals/" + knownUserUuid)).willReturn(
+                  aResponse().withStatus(200).withBody(bodyJson))
+          );
+
           webTestClient.get()
                   .uri("/api/v1/auth/me")
                   .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenDto.accessToken())
@@ -313,10 +336,10 @@ class ControllerIntegrationTest {
                   .expectHeader().contentType(MediaType.APPLICATION_JSON)
                   .expectBody(IndividualDto.class)
                   .consumeWith(response -> {
-                       IndividualDto individualDto = response.getResponseBody();
-                       Assertions.assertNotNull(individualDto);
-                       Assertions.assertNotNull(individualDto.getUser());
-                       Assertions.assertEquals(email, individualDto.getUser().getEmail());
+                       IndividualDto dto = response.getResponseBody();
+                       Assertions.assertNotNull(dto);
+                       Assertions.assertNotNull(dto.getUser());
+                       Assertions.assertEquals(email, dto.getUser().getEmail());
                   });
      }
 

@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
      private final TokenService tokenService;
      private final PersonServiceFeignClient personServiceFeignClient;
 
-     @Override //todo: confirm pass, common uid for user keycloak attribute uuid
+     @Override //todo: confirm pass
      public Mono<TokenDto> registration(IndividualCreateDto requestDto) {
           return Mono.fromCallable(() -> personServiceFeignClient.createIndividual(requestDto))
                   .subscribeOn(Schedulers.boundedElastic()) // read about this
@@ -44,14 +44,16 @@ public class UserServiceImpl implements UserService {
                        return Mono.error(new CreateUserException("User creation failed, person-service is not available"));
                   })
                   .flatMap(individual -> apiClient.registration(new AuthRegistrationRequestDto(
-                                          requestDto.getUser().getEmail(),
+                                          individual.getBody().getId(),
+                                  individual.getBody().getUser().getEmail(),
                                           requestDto.getUser().getPassword(),
                                           requestDto.getUser().getConfirmPassword(),
-                                          requestDto.getUser().getFirstName(),
-                                          requestDto.getUser().getLastName()
+                                  individual.getBody().getUser().getFirstName(),
+                                  individual.getBody().getUser().getLastName()
                                   ))
-                          //todo: rollback rename user
+                                  //todo: rollback rename user
                                   .onErrorResume(ex -> {
+                                               log.error("Keycloak registration failed", ex);
                                                log.error("Delete user with id {} from person-service", individual.getBody().getId());
                                                return Mono.fromCallable(() -> personServiceFeignClient.deleteIndividual(individual.getBody().getId()))
                                                        .subscribeOn(Schedulers.boundedElastic())
@@ -67,12 +69,11 @@ public class UserServiceImpl implements UserService {
                   );
      }
 
-     //todo: UUID should be added in token
      @Override
      public Mono<IndividualDto> me(String accessToken) {
           return apiClient.me(accessToken).
                   flatMap(keycloakUser ->
-                          Mono.fromCallable(() -> personServiceFeignClient.getIndividualByEmail(keycloakUser.email()).getBody())
+                          Mono.fromCallable(() -> personServiceFeignClient.getIndividualById(keycloakUser.globalUuid()).getBody())
                                   .subscribeOn(Schedulers.boundedElastic()));
 
      }

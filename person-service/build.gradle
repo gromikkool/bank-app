@@ -29,6 +29,11 @@ java {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url = uri("http://localhost:8081/repository/maven-releases/")
+        // login and password
+        allowInsecureProtocol = true
+    }
 }
 
 dependencies {
@@ -39,7 +44,7 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocOpenApiVersion"
     implementation 'org.springframework.data:spring-data-envers'
-    implementation project(":person-service-client")
+    implementation "com.k3sh:person-service-client:$personServiceClientVersion"
 
 
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
