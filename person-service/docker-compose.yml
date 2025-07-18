@@ -19,8 +19,12 @@ services:
       start_period: 5s
     networks:
       - person_net
+
   person-service:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: shared_net
     container_name: person-service
     ports:
       - "${APP_PORT}:${APP_PORT}"
@@ -38,6 +42,7 @@ services:
     networks:
       - person_net
       - shared_net
+
   prometheus:
     image: prom/prometheus:v3.4.2
     container_name: prometheus
@@ -75,20 +80,12 @@ services:
       - person_net
       - shared_net
 
-  nexus:
-    image: sonatype/nexus3
-    restart: always
-    volumes:
-      - "nexus-data:/sonatype-work"
-    ports:
-      - "8081:8081"
-      - "8085:8085"
-
 
 networks:
   person_net:
   shared_net:
     external: true
+    name: shared_net
 volumes:
   postgres_data:
   nexus-data:

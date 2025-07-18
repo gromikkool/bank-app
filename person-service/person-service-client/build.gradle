@@ -47,7 +47,7 @@ publishing {
     repositories {
         maven {
             name = "LocalNexus"
-            url = uri("http://localhost:8081/repository/maven-releases/")
+            url = uri("http://nexus:8081/repository/maven-releases/")
 
             credentials {
                 username = project.findProperty("nexusUsername") ?: "admin"

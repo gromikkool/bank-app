@@ -1,7 +1,6 @@
 server:
   port: ${APP_PORT}
 
-
 spring:
   application:
     name: person-service

@@ -30,7 +30,11 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        url = uri("http://localhost:8081/repository/maven-releases/")
+        url = uri("http://host.docker.internal:8081/repository/maven-releases/")
+        credentials {
+            username = project.findProperty("nexusUsername") ?: "admin"
+            password = project.findProperty("nexusPassword") ?: "admin123"
+        }
         // login and password
         allowInsecureProtocol = true
     }
@@ -60,7 +64,6 @@ dependencies {
     testImplementation "org.testcontainers:junit-jupiter:$testJUnitJupiterTestContainerVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersPostgreVersion"
     testImplementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion")
-
 
 
     implementation 'org.projectlombok:lombok'

@@ -1,0 +1,174 @@
+services:
+  nexus:
+    image: sonatype/nexus3
+    container_name: nexus
+    ports:
+      - "${NEXUS_PORT:-8081}:8081"
+    volumes:
+      - "${NEXUS_VOLUME:-./infra/nexus/data}:/nexus-data"
+    restart: unless-stopped
+    networks:
+      - shared_net
+
+  postgres_keycloak:
+    image: postgres:15
+    container_name: postgres_keycloak
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_POSTGRES_DB}
+      POSTGRES_USER: ${KEYCLOAK_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
+    ports:
+      - "${KEYCLOAK_POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_keycloak_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - keycloak_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres_keycloak
+      KC_DB_URL_DATABASE: ${KEYCLOAK_POSTGRES_DB}
+      KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
+      KC_HOSTNAME: localhost
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED}
+      KC_HEALTH_ENABLED: ${KEYCLOAK_HEALTH_ENABLED}
+      KC_HTTP_MANAGEMENT_PORT: ${KEYCLOAK_MANAGEMENT_PORT}
+    ports:
+      - "${KEYCLOAK_PORT}:8080"
+      - "${KEYCLOAK_MANAGEMENT_PORT}:7800"
+    depends_on:
+      postgres_keycloak:
+        condition: service_healthy
+    networks:
+      - keycloak_net
+
+  individuals-api:
+    image: individuals-api
+    container_name: individuals-api
+    env_file:
+      - .env
+    build:
+      context: ./individuals-api
+      dockerfile: Dockerfile
+
+    ports:
+      - "${BANK_APP_PORT}:8092"
+      - "${BANK_APP_DEBUG_PORT}:5005"
+    depends_on:
+      - keycloak
+    networks:
+      - keycloak_net
+      - shared_net
+
+  postgres_person:
+    image: postgres:15
+    container_name: postgres_person
+    env_file:
+      - ./person-service/.env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_person_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - person_net
+
+  person-service:
+    build:
+      context: ./person-service
+      dockerfile: Dockerfile
+    container_name: person-service
+    env_file:
+      - ./person-service/.env
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+      - "${APP_DEBUG_PORT}:${APP_DEBUG_PORT}"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      APP_PORT: ${APP_PORT}
+      APP_DEBUG_PORT: ${APP_DEBUG_PORT}
+    depends_on:
+      - postgres_person
+    networks:
+      - person_net
+      - shared_net
+
+  prometheus:
+    image: prom/prometheus:v3.4.2
+    container_name: prometheus
+    env_file:
+      - ./person-service/.env
+    ports:
+      - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - person_net
+
+  grafana:
+    image: grafana/grafana:12.0.2
+    env_file:
+      - ./person-service/.env
+    container_name: grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - person_net
+
+  jaeger:
+    image: jaegertracing/jaeger:2.5.0
+    env_file:
+      - ./person-service/.env
+    container_name: jaeger
+    ports:
+      - "4318:4318"
+      - "4317:4317"
+      - "6832:6832"
+      - "5778:5778"
+      - "16686:16686"
+    restart: unless-stopped
+    environment:
+      OTEL_ENABLED: true
+    networks:
+      - person_net
+      - shared_net
+
+
+networks:
+  keycloak_net:
+  person_net:
+  shared_net:
+    external: true
+volumes:
+  postgres_person_data:
+  postgres_keycloak_data:
+  nexus-data:
