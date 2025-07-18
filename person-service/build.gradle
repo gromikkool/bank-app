@@ -55,13 +55,15 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$testJUnitVersion")
     testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testJUnitJupiterTestContainerVersion"
     testImplementation "org.testcontainers:postgresql:$testcontainersPostgreVersion"
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion")
 
 
 
-    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
