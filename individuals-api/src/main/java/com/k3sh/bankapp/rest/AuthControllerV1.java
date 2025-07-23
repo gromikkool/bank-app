@@ -6,7 +6,6 @@ import com.k3sh.bankapp.service.TokenService;
 import com.k3sh.bankapp.service.UserService;
 import com.k3sh.common.model.IndividualCreateDto;
 import com.k3sh.common.model.IndividualDto;
-import com.k3sh.common.model.UserCreateDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

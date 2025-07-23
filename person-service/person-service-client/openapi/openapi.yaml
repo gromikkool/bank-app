@@ -54,10 +54,10 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /individuals/{uuid}:
     delete:
-      summary: Delete a individual
+      summary: Rollback registration of an individual
       tags:
         - user
-      operationId: deleteIndividual
+      operationId: rollbackRegistration
       parameters:
         - name: uuid
           in: path

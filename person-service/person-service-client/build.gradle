@@ -6,7 +6,7 @@ plugins {
 
 
 group = "com.k3sh"
-version = "1.0.0"
+version = "1.0.0-SNAPSHOT"
 
 openApiGenerate {
     generatorName = "spring"
@@ -47,11 +47,11 @@ publishing {
     repositories {
         maven {
             name = "LocalNexus"
-            url = uri("http://nexus:8081/repository/maven-releases/")
+            url = uri(System.getenv("NEXUS_URL") ?: "http://localhost:8081/repository/maven-snapshots/")
 
             credentials {
-                username = project.findProperty("nexusUsername") ?: "admin"
-                password = project.findProperty("nexusPassword") ?: "admin123"
+                username = System.getenv("NEXUS_USERNAME") ?: "admin"
+                password = System.getenv("NEXUS_PASSWORD") ?: "3717grom"
             }
 
             allowInsecureProtocol = true

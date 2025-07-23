@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
      private final TokenService tokenService;
      private final PersonServiceFeignClient personServiceFeignClient;
 
-     @Override //todo: confirm pass
+     @Override
      public Mono<TokenDto> registration(IndividualCreateDto requestDto) {
           return Mono.fromCallable(() -> personServiceFeignClient.createIndividual(requestDto))
                   .subscribeOn(Schedulers.boundedElastic()) // read about this
@@ -51,11 +51,10 @@ public class UserServiceImpl implements UserService {
                                   individual.getBody().getUser().getFirstName(),
                                   individual.getBody().getUser().getLastName()
                                   ))
-                                  //todo: rollback rename user
                                   .onErrorResume(ex -> {
                                                log.error("Keycloak registration failed", ex);
                                                log.error("Delete user with id {} from person-service", individual.getBody().getId());
-                                               return Mono.fromCallable(() -> personServiceFeignClient.deleteIndividual(individual.getBody().getId()))
+                                               return Mono.fromCallable(() -> personServiceFeignClient.rollbackRegistration(individual.getBody().getId()))
                                                        .subscribeOn(Schedulers.boundedElastic())
                                                        .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
                                                        .onErrorResume(deleteEx -> {
