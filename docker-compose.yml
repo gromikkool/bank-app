@@ -23,6 +23,8 @@ services:
   postgres_keycloak:
     image: postgres:15
     container_name: postgres_keycloak
+    env_file:
+      - .env.individuals
     environment:
       POSTGRES_DB: ${KEYCLOAK_POSTGRES_DB}
       POSTGRES_USER: ${KEYCLOAK_POSTGRES_USER}
@@ -43,6 +45,8 @@ services:
     image: quay.io/keycloak/keycloak:26.2
     container_name: keycloak
     command: start-dev
+    env_file:
+      - .env.individuals
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres_keycloak
@@ -68,7 +72,7 @@ services:
     image: individuals-api
     container_name: individuals-api
     env_file:
-      - .env
+      - .env.individuals
     build:
       context: ./individuals-api
       dockerfile: Dockerfile
@@ -87,7 +91,7 @@ services:
     image: postgres:15
     container_name: postgres_person
     env_file:
-      - ./person-service/.env
+      - .env.person-service
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -112,7 +116,7 @@ services:
       dockerfile: Dockerfile
     container_name: person-service
     env_file:
-      - ./person-service/.env
+      - .env.person-service
     ports:
       - "${APP_PORT}:${APP_PORT}"
       - "${APP_DEBUG_PORT}:${APP_DEBUG_PORT}"
@@ -135,7 +139,7 @@ services:
     image: prom/prometheus:v3.4.2
     container_name: prometheus
     env_file:
-      - ./person-service/.env
+      - .env
     ports:
       - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
     volumes:
@@ -146,7 +150,7 @@ services:
   grafana:
     image: grafana/grafana:12.0.2
     env_file:
-      - ./person-service/.env
+      - .env
     container_name: grafana
     ports:
       - "${GRAFANA_PORT}:3000"
