@@ -1,10 +1,10 @@
 CREATE SCHEMA IF NOT EXISTS transaction_service;
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE
+EXTENSION IF NOT EXISTS "uuid-ossp";
 
-
-CREATE TABLE wallet_types
+CREATE TABLE transaction_service.wallet_types
 (
-    uid           UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    uuid          UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     created_at    TIMESTAMP   NOT NULL DEFAULT now(),
     modified_at   TIMESTAMP,
     name          VARCHAR(32) NOT NULL,
@@ -15,33 +15,35 @@ CREATE TABLE wallet_types
     creator       VARCHAR(255),
     modifier      VARCHAR(255)
 );
+
 CREATE TABLE transaction_service.wallets
 (
-    uid             UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
-    created_at      TIMESTAMP   NOT NULL DEFAULT now(),
-    modified_at     TIMESTAMP,
-    name            VARCHAR(32) NOT NULL,
-    wallet_type_uid UUID        NOT NULL REFERENCES wallet_types (uid),
-    user_uid        UUID        NOT NULL,
-    status          VARCHAR(30) NOT NULL,
-    balance         DECIMAL     NOT NULL DEFAULT 0.0,
-    archived_at     TIMESTAMP
-);
-CREATE TYPE transaction_service.payment_type AS ENUM ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER');
-CREATE TABLE transaction_service.transactions
-(
-    uid               UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
-    created_at        TIMESTAMP    NOT NULL DEFAULT now(),
-    modified_at       TIMESTAMP,
-    user_uid          UUID         NOT NULL,
-    wallet_uid        UUID         NOT NULL REFERENCES wallets (uid),
-    amount            DECIMAL      NOT NULL DEFAULT 0.0,
-    type              payment_type NOT NULL,
-    status            VARCHAR(32)  NOT NULL,
-    comment           VARCHAR(256),
-    fee               DECIMAL,
-    target_wallet_uid UUID,   -- для transfer
-    payment_method_id BIGINT, -- для deposit/withdrawal
-    failure_reason    VARCHAR(256)
+    uuid             UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
+    created_at       TIMESTAMP      NOT NULL DEFAULT now(),
+    modified_at      TIMESTAMP,
+    name             VARCHAR(32)    NOT NULL,
+    wallet_type_uuid UUID           NOT NULL REFERENCES transaction_service.wallet_types (uuid),
+    user_uuid        UUID           NOT NULL,
+    status           VARCHAR(30)    NOT NULL,
+    balance          DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    archived_at      TIMESTAMP
 );
 
+CREATE TYPE transaction_service.payment_type AS ENUM ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER');
+
+CREATE TABLE transaction_service.transactions
+(
+    uuid               UUID PRIMARY KEY                          DEFAULT uuid_generate_v4(),
+    created_at         TIMESTAMP                        NOT NULL DEFAULT now(),
+    modified_at        TIMESTAMP,
+    user_uuid          UUID                             NOT NULL,
+    wallet_uuid        UUID                             NOT NULL REFERENCES transaction_service.wallets (uuid),
+    amount             DECIMAL(10, 2)                   NOT NULL DEFAULT 0.00,
+    type               transaction_service.payment_type NOT NULL,
+    status             VARCHAR(32)                      NOT NULL,
+    comment            VARCHAR(256),
+    fee                DECIMAL(10, 2),
+    target_wallet_uuid UUID,
+    payment_method_id  BIGINT,
+    failure_reason     VARCHAR(256)
+);

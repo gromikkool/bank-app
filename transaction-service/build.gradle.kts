@@ -1,4 +1,6 @@
 
+val mapstructVersion : String by project
+
 plugins {
     java
     id("org.springframework.boot") version "3.5.4"
@@ -26,6 +28,15 @@ openApiGenerate {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "LocalNexus"
+        url = uri(System.getenv("NEXUS_URL") ?: "http://localhost:8081/repository/maven-snapshots/")
+        credentials {
+            username = System.getenv("NEXUS_USERNAME") ?: "admin"
+            password = System.getenv("NEXUS_PASSWORD") ?: "3717grom"
+        }
+        isAllowInsecureProtocol = true
+    }
 }
 
 dependencies {
@@ -35,8 +46,15 @@ dependencies {
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.projectlombok:lombok")
+    implementation("com.k3sh:transaction-service-client:0.0.1-SNAPSHOT")
+    annotationProcessor("org.projectlombok:lombok")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("org.postgresql:postgresql")
+
+    implementation("org.mapstruct:mapstruct:$mapstructVersion")
+    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.kafka:spring-kafka-test")
@@ -44,6 +62,8 @@ dependencies {
     testImplementation("org.testcontainers:kafka")
     testImplementation("org.testcontainers:postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+
 }
 
 

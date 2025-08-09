@@ -1,5 +1,7 @@
 #Stage 1: Build the application
 FROM gradle:8.5-jdk21 AS build
+ARG NEXUS_URL
+ENV NEXUS_URL=$NEXUS_URL
 WORKDIR /app
 
 COPY . .

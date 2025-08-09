@@ -34,14 +34,14 @@ public class IndividualController implements IndividualsApi {
      }
 
      @Override
-     public ResponseEntity<IndividualDto> createIndividual(IndividualCreateDto individualCreateDto) {
-          return ResponseEntity.ok(individualService.createIndividual(individualCreateDto));
+     public ResponseEntity<IndividualDto> rollbackRegistration(UUID uuid) {
+          IndividualDto deletedUser = individualService.deleteIndividual(uuid);
+          return ResponseEntity.ok(deletedUser);
      }
 
      @Override
-     public ResponseEntity<IndividualDto> deleteIndividual(UUID id) {
-          IndividualDto deletedUser = individualService.deleteIndividual(id);
-          return ResponseEntity.ok(deletedUser);
+     public ResponseEntity<IndividualDto> createIndividual(IndividualCreateDto individualCreateDto) {
+          return ResponseEntity.ok(individualService.createIndividual(individualCreateDto));
      }
 
 }

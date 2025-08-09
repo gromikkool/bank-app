@@ -1,8 +1,6 @@
 # support reading from .env file
 
 spring:
-  config:
-    import: optional:file:.env[.properties]
   application:
     name: bank-app
   security:
@@ -26,7 +24,8 @@ server:
   port: ${BANK_APP_PORT}
 
 feign:
-  url: http://person-service:8777/
+  person-service-url: http://person-service:8777/
+  transaction-service-url: http://transaction-service:8888/
 
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}

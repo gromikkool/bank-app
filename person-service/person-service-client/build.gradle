@@ -4,6 +4,11 @@ plugins {
     id 'maven-publish'
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 group = "com.k3sh"
 version = "1.0.0-SNAPSHOT"
@@ -73,6 +78,5 @@ dependencies {
     compileOnly "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
     compileOnly 'org.springframework:spring-context:7.0.0-M6'
     implementation 'org.springframework:spring-web:7.0.0-M6'
-    // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
     compileOnly 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 }
