@@ -1,4 +1,4 @@
-FROM gradle:8.14.2-jdk24 AS build
+FROM gradle:8.5-jdk21 AS build
 ARG NEXUS_URL=http://host.docker.internal:8081/repository/maven-snapshots/
 ARG NEXUS_USERNAME=admin
 ARG NEXUS_PASSWORD=3717grom

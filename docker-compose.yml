@@ -15,10 +15,10 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - nexus
-#    args:
-#      - NEXUS_URL=http://host.docker.internal:8081/repository/maven-snapshots/
-#      - NEXUS_USERNAME=admin
-#      - NEXUS_PASSWORD=3717grom
+  #    args:
+  #      - NEXUS_URL=http://host.docker.internal:8081/repository/maven-snapshots/
+  #      - NEXUS_USERNAME=admin
+  #      - NEXUS_PASSWORD=3717grom
 
   postgres_keycloak:
     image: postgres:15
@@ -44,9 +44,9 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.2
     container_name: keycloak
-    command: start-dev
-    env_file:
-      - .env.individuals
+    command:
+      - start-dev
+      - --http-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: postgres_keycloak
@@ -54,11 +54,13 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER}
       KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD}
       KC_HOSTNAME: localhost
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_METRICS_ENABLED: ${KEYCLOAK_METRICS_ENABLED}
       KC_HEALTH_ENABLED: ${KEYCLOAK_HEALTH_ENABLED}
       KC_HTTP_MANAGEMENT_PORT: ${KEYCLOAK_MANAGEMENT_PORT}
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
     ports:
       - "${KEYCLOAK_PORT}:8080"
       - "${KEYCLOAK_MANAGEMENT_PORT}:7800"

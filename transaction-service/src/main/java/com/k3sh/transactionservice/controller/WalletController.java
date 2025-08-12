@@ -22,6 +22,5 @@ public class WalletController implements WalletsApi {
      @Override
      public ResponseEntity<WalletResponse> walletsWalletUidGet(String walletUid) {
           return ResponseEntity.ok(walletService.getWallet(walletUid));
-
      }
 }

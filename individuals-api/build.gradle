@@ -52,6 +52,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springOpenApiVersion"
     implementation "org.springframework.cloud:spring-cloud-starter-openfeign:$feignClientVersion"
     implementation "com.k3sh:person-service-client:$personServiceClientVersion"
+    implementation "com.k3sh:transaction-service-client:0.0.1-SNAPSHOT"
 
     implementation "io.github.openfeign:feign-micrometer:$feignMicrometerVersion"
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
