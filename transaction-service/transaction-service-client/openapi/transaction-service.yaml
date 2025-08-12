@@ -52,6 +52,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /wallet-types:
+    post:
+      summary: Create a new wallet type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletTypeRequest'
+      responses:
+        '201':
+          description: Wallet type successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletTypeResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /wallet-types/{walletTypeUid}:
+    get:
+      summary: Get existing wallet type
+      parameters:
+        - name: walletTypeUid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wallet type data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletTypeResponse'
+        '404':
+          description: Wallet type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /transactions/{type}/init:
     post:
@@ -187,6 +233,58 @@ components:
           type: string
           format: date-time
         archivedAt:
+          type: string
+          format: date-time
+
+    CreateWalletTypeRequest:
+      type: object
+      required:
+        - name
+        - currencyCode
+        - status
+      properties:
+        name:
+          type: string
+          maxLength: 32
+        currencyCode:
+          type: string
+          maxLength: 3
+        status:
+          type: string
+          maxLength: 18
+        userType:
+          type: string
+          maxLength: 15
+        creator:
+          type: string
+        modifier:
+          type: string
+
+    WalletTypeResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        currencyCode:
+          type: string
+        status:
+          type: string
+        archivedAt:
+          type: string
+          format: date-time
+        userType:
+          type: string
+        creator:
+          type: string
+        modifier:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        modifiedAt:
           type: string
           format: date-time
 

@@ -19,4 +19,8 @@ public interface WalletMapper {
     default OffsetDateTime map(LocalDateTime localDateTime) {
         return localDateTime != null ? localDateTime.atOffset(ZoneOffset.UTC) : null;
     }
+
+    default LocalDateTime map(OffsetDateTime value) {
+        return value != null ? value.toLocalDateTime() : null;
+    }
 }

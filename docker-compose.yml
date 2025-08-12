@@ -87,7 +87,7 @@ services:
       NEXUS_USERNAME: ${NEXUS_USERNAME}
       NEXUS_PASSWORD: ${NEXUS_PASSWORD}
     ports:
-      - "${INDIVIDUALS_APP_PORT}:8092"
+      - "${INDIVIDUALS_APP_PORT}:8080"
       - "${INDIVIDUALS_APP_DEBUG_PORT}:5005"
     depends_on:
       - keycloak
@@ -129,8 +129,8 @@ services:
     env_file:
       - .env.person-service
     ports:
-      - "${PERSON_APP_PORT}:${PERSON_APP_PORT}"
-      - "${PERSON_APP_DEBUG_PORT}:${PERSON_APP_DEBUG_PORT}"
+      - "${PERSON_APP_PORT}:8080"
+      - "${PERSON_APP_DEBUG_PORT}:5005"
     depends_on:
       - postgres-person
       - nexus
@@ -171,12 +171,13 @@ services:
     env_file:
       - .env.transaction-service
     ports:
-      - "${TRANSACTION_SERVICE_PORT}:${TRANSACTION_SERVICE_PORT}"
+      - "${TRANSACTION_SERVICE_PORT}:8080"
     depends_on:
       - postgres-person
       - nexus
     networks:
       - transaction_net
+      - shared_net
 
   prometheus:
     image: prom/prometheus:v3.4.2

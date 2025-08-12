@@ -1,5 +1,3 @@
-# support reading from .env file
-
 spring:
   application:
     name: bank-app
@@ -24,8 +22,8 @@ server:
   port: ${BANK_APP_PORT}
 
 feign:
-  person-service-url: http://person-service:8777/
-  transaction-service-url: http://transaction-service:8888/
+  person-service-url: ${FEIGN_PERSON_SERVICE_URL:http://person-service:8080/}
+  transaction-service-url: ${FEIGN_TRANSACTION_SERVICE_URL:http://transaction-service:8080/}
 
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}

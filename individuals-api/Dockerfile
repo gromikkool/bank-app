@@ -5,7 +5,7 @@ ENV NEXUS_URL=$NEXUS_URL
 WORKDIR /app
 
 COPY . .
-RUN ./gradlew clean build -x test
+RUN gradle clean build -x test
 
 #Stage 2: Create the Docker Image
 FROM openjdk:21-jdk-slim

@@ -1,5 +1,6 @@
 
 val mapstructVersion : String by project
+val transactionServiceClientVersion : String by project
 
 plugins {
     java
@@ -9,7 +10,7 @@ plugins {
 }
 
 group = "com.k3sh"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 
 java {
     toolchain {
@@ -47,13 +48,13 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.projectlombok:lombok")
-    implementation("com.k3sh:transaction-service-client:0.0.1-SNAPSHOT")
+    implementation("com.k3sh:transaction-service-client:$transactionServiceClientVersion")
+    implementation("org.mapstruct:mapstruct:$mapstructVersion")
+    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
     annotationProcessor("org.projectlombok:lombok")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("org.postgresql:postgresql")
 
-    implementation("org.mapstruct:mapstruct:$mapstructVersion")
-    annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

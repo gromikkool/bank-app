@@ -20,7 +20,7 @@ plugins {
 
 
 group = "com.k3sh"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 
 val openApiOutputDir = layout.buildDirectory.dir("generated-sources/openapi").get().asFile
 
@@ -47,10 +47,12 @@ openApiGenerate {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            groupId = group as String
+            println("Publishing version: ${project.version}")
+            groupId = project.group as String
             artifactId = "transaction-service-client"
-            version = version as String
+            version = project.version as String
             from(components["java"])
+
         }
     }
 
