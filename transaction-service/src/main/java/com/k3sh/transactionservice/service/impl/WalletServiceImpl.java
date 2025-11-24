@@ -1,6 +1,5 @@
 package com.k3sh.transactionservice.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.k3sh.common.model.CreateWalletRequest;
 import com.k3sh.common.model.WalletResponse;
 import com.k3sh.transactionservice.entity.Wallet;
@@ -33,6 +32,6 @@ public class WalletServiceImpl implements WalletService {
           if (wallet != null) {
                return walletMapper.toDto(wallet);
           }
-          throw new EntityNotFoundException("Wallet not found");
+          throw new EntityNotFoundException("Wallet with uuid " + walletUuid + " not found");
      }
 }

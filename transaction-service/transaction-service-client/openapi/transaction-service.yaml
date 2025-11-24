@@ -114,10 +114,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/DepositInitRequest'
-                - $ref: '#/components/schemas/WithdrawalInitRequest'
-                - $ref: '#/components/schemas/TransferInitRequest'
+              $ref: '#/components/schemas/TransactionInitRequest'
       responses:
         '200':
           description: Transaction terms
@@ -287,6 +284,18 @@ components:
         modifiedAt:
           type: string
           format: date-time
+
+    TransactionInitRequest:
+      oneOf:
+        - $ref: '#/components/schemas/DepositInitRequest'
+        - $ref: '#/components/schemas/WithdrawalInitRequest'
+        - $ref: '#/components/schemas/TransferInitRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          DEPOSIT: '#/components/schemas/DepositInitRequest'
+          WITHDRAWAL: '#/components/schemas/WithdrawalInitRequest'
+          TRANSFER: '#/components/schemas/TransferInitRequest'
 
     DepositInitRequest:
       type: object
