@@ -45,11 +45,11 @@ public class UserServiceImpl implements UserService {
                   })
                   .flatMap(individual -> apiClient.registration(new AuthRegistrationRequestDto(
                                           individual.getBody().getId(),
-                                  individual.getBody().getUser().getEmail(),
+                                          individual.getBody().getUser().getEmail(),
                                           requestDto.getUser().getPassword(),
                                           requestDto.getUser().getConfirmPassword(),
-                                  individual.getBody().getUser().getFirstName(),
-                                  individual.getBody().getUser().getLastName()
+                                          individual.getBody().getUser().getFirstName(),
+                                          individual.getBody().getUser().getLastName()
                                   ))
                                   .onErrorResume(ex -> {
                                                log.error("Keycloak registration failed", ex);

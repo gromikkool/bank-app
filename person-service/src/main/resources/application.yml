@@ -7,7 +7,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    url: ${DATABASE_URL}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 
@@ -17,7 +17,7 @@ spring:
     encoding: UTF-8
     baselineOnMigrate: true
     schemas: ${POSTGRES_DB}
-    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    url: ${DATABASE_URL}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     validate-on-migrate: true

@@ -35,7 +35,7 @@ repositories {
         url = uri(System.getenv("NEXUS_URL") ?: "http://localhost:8081/repository/maven-snapshots/")
         credentials {
             username = project.findProperty("nexusUsername") ?: "admin"
-            password = project.findProperty("nexusPassword") ?: "admin123"
+            password = project.findProperty("nexusPassword") ?: "3717grom"
         }
         allowInsecureProtocol = true
     }
@@ -52,6 +52,7 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:$springOpenApiVersion"
     implementation "org.springframework.cloud:spring-cloud-starter-openfeign:$feignClientVersion"
     implementation "com.k3sh:person-service-client:$personServiceClientVersion"
+    implementation "com.k3sh:transaction-service-client:1.0.0-SNAPSHOT"
 
     implementation "io.github.openfeign:feign-micrometer:$feignMicrometerVersion"
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
