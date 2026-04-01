@@ -51,12 +51,13 @@ publishing {
 
     repositories {
         maven {
-            name = "LocalNexus"
-            url = uri(System.getenv("NEXUS_URL") ?: "http://localhost:8081/repository/maven-snapshots/")
+            name = "ExternalRepo"
+            // Use the property 'repoUrl' if provided, otherwise default to local Nexus
+            url = project.hasProperty('repoUrl') ? project.property('repoUrl') : 'http://localhost:8081/repository/maven-releases/'
 
             credentials {
-                username = System.getenv("NEXUS_USERNAME") ?: "admin"
-                password = System.getenv("NEXUS_PASSWORD") ?: "3717grom"
+                username = project.hasProperty('gprUser') ? project.property('gprUser') : 'admin'
+                password = project.hasProperty('gprKey') ? project.property('gprKey') : '3717grom'
             }
 
             allowInsecureProtocol = true

@@ -58,18 +58,25 @@ publishing {
 
     repositories {
         maven {
-            name = "LocalNexus"
-            url = uri(System.getenv("NEXUS_URL") ?: "http://localhost:8081/repository/maven-snapshots/")
+            name = "ExternalRepo"
+
+            // In Kotlin DSL, we use findProperty and cast to String
+            val urlProp = findProperty("repoUrl") as String?
+                ?: "http://localhost:8081/repository/maven-releases/"
+
+            url = uri(urlProp)
 
             credentials {
-                username = System.getenv("NEXUS_USERNAME") ?: "admin"
-                password = System.getenv("NEXUS_PASSWORD") ?: "3717grom"
+                username = findProperty("gprUser") as String? ?: "admin"
+                password = findProperty("gprKey") as String? ?: "3717grom"
             }
 
+            // Required if your local Nexus is on HTTP (not HTTPS)
             isAllowInsecureProtocol = true
         }
     }
 }
+
 
 
 java {

@@ -1,0 +1,42 @@
+name: BankApp monorepo
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+env:
+  GPR_REPO_URL: "https://maven.pkg.github.com/gromikkool/bank-app"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'amzn'
+
+      # Step 1: Publish Service B (The dependency)
+      - name: Publish person-service-client
+        run: cd person-service/person-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GPR_KEY }}
+
+      - name: Publish transaction-service-client
+        run: cd transaction-service/transaction-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GPR_KEY }}
+
+      - name: Build service individuals-API
+        run: cd individuals-api && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GPR_KEY }}
+
+      - name: Build service transaction-service
+        run: cd transaction-service && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GPR_KEY }}
+
+      - name: Build service person-service
+        run: cd person-service && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GPR_KEY }}
