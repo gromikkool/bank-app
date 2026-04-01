@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 21
-          distribution: 'amzn'
+          distribution: 'corretto'
 
       # Step 1: Publish Service B (The dependency)
       - name: Publish person-service-client
