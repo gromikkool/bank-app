@@ -290,36 +290,43 @@ components:
         - $ref: '#/components/schemas/DepositInitRequest'
         - $ref: '#/components/schemas/WithdrawalInitRequest'
         - $ref: '#/components/schemas/TransferInitRequest'
-      discriminator:
-        propertyName: type
-        mapping:
-          DEPOSIT: '#/components/schemas/DepositInitRequest'
-          WITHDRAWAL: '#/components/schemas/WithdrawalInitRequest'
-          TRANSFER: '#/components/schemas/TransferInitRequest'
+#      discriminator:
+#        propertyName: type
+#        mapping:
+#          DEPOSIT: '#/components/schemas/DepositInitRequest'
+#          WITHDRAWAL: '#/components/schemas/WithdrawalInitRequest'
+#          TRANSFER: '#/components/schemas/TransferInitRequest'
 
     DepositInitRequest:
-      type: object
-      required:
-        - walletUid
-        - amount
-      properties:
-        walletUid:
-          type: string
-          format: uuid
-        amount:
-          type: number
-          format: double
-        comment:
-          type: string
-        fee:
-          type: number
-          format: double
-        paymentMethodId:
-          type: integer
-        metadata:
-          type: object
-          additionalProperties:
-            type: string
+      allOf:
+        - type: object
+          required:
+            - type
+            - walletUid
+            - amount
+          properties:
+            type:
+              type: string
+              default: DEPOSIT
+              enum:
+                - DEPOSIT
+            walletUid:
+              type: string
+              format: uuid
+            amount:
+              type: number
+              format: double
+            comment:
+              type: string
+            fee:
+              type: number
+              format: double
+            paymentMethodId:
+              type: integer
+            metadata:
+              type: object
+              additionalProperties:
+                type: string
 
     WithdrawalInitRequest:
       allOf:
@@ -328,10 +335,16 @@ components:
     TransferInitRequest:
       type: object
       required:
+        - type
         - fromWalletUid
         - toWalletUid
         - amount
       properties:
+        type:
+          type: string
+          default: TRANSFER
+          enum:
+            - TRANSFER
         fromWalletUid:
           type: string
           format: uuid
