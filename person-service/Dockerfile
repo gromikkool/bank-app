@@ -1,4 +1,4 @@
-FROM amazoncorretto:21-al2023-jre
+FROM amazoncorretto:21-al2023
 WORKDIR /app
 
 COPY build/libs/*.jar app.jar
