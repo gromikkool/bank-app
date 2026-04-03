@@ -15,7 +15,7 @@ public class TransactionController implements TransactionsApi {
      private final TransactionService transactionService;
 
      @Override
-     public ResponseEntity<TransactionInitResponse> transactionsTypeInitPost(@PathVariable String type, TransactionsTypeInitPostRequest request) {
+     public ResponseEntity<TransactionInitResponse> transactionsTypeInitPost(@PathVariable String type, TransactionInitRequest request) {
           return ResponseEntity.ok(transactionService.initTransaction(type, request));
      }
 
