@@ -16,7 +16,7 @@ COPY . .
 RUN gradle clean build -x test
 
 #Stage 2: Create the Docker Image
-FROM openjdk:21-jdk-slim
+FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
