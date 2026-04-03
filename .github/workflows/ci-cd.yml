@@ -27,6 +27,7 @@ jobs:
         with:
           java-version: 21
           distribution: 'corretto'
+          cache: 'gradle'
 
       # Step 1: Publish Service B (The dependency)
 
@@ -37,10 +38,12 @@ jobs:
         run: cd transaction-service/transaction-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
       - name: Build service individuals-API
-        run: cd individuals-api && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+        run: cd individuals-api && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
       - name: Build service transaction-service
-        run: cd transaction-service && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+        run: cd transaction-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
       - name: Build service person-service
-        run: cd person-service && ./gradlew build -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+        run: cd person-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
+
