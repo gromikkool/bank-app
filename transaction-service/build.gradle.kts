@@ -4,7 +4,7 @@ val transactionServiceClientVersion : String by project
 
 plugins {
     java
-    id("org.springframework.boot") version "3.5.4"
+    id("org.springframework.boot") version "3.5.13"
     id("io.spring.dependency-management") version "1.1.7"
     id ("org.openapi.generator") version "7.14.0"
 }
