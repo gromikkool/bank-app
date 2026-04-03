@@ -34,8 +34,12 @@ jobs:
 
       - name: Build Services
         run: |
-          ./gradlew :individuals-api:build :transaction-service:build :person-service:build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-
+          echo "Building individuals-api..."
+          cd individuals-api && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+          
+          cd ../transaction-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+          
+          cd ../person-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
       - name: Upload JARs
         uses: actions/upload-artifact@v4
         with:
