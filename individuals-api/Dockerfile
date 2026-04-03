@@ -1,14 +1,4 @@
-#Stage 1: Build the application
-FROM gradle:8.5-jdk21 AS build
-ARG NEXUS_URL
-ENV NEXUS_URL=$NEXUS_URL
-WORKDIR /app
-
-COPY . .
-RUN gradle clean build -x test
-
-#Stage 2: Create the Docker Image
-FROM amazoncorretto:21-al2023-jdk
+FROM amazoncorretto:21-al2023-jre
 WORKDIR /app
 
 EXPOSE 8092

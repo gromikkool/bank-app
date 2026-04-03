@@ -1,11 +1,10 @@
 name: BankApp monorepo
 on:
   push:
-    branches:
-      - develop
+    branches: [ develop ]
   pull_request:
-    branches:
-      - develop
+    branches: [ develop ]
+
 env:
   GPR_REPO_URL: "https://maven.pkg.github.com/gromikkool/bank-app"
 
@@ -13,7 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       packages: write
       contents: read
     steps:
@@ -29,27 +27,22 @@ jobs:
           distribution: 'corretto'
           cache: 'gradle'
 
-      # Step 1: Publish Service B (The dependency)
+      - name: Publish Clients
+        run: |
+          cd person-service/person-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+          cd ../../transaction-service/transaction-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish person-service-client
-        run: cd person-service/person-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+      - name: Build Services
+        run: |
+          ./gradlew :individuals-api:build :transaction-service:build :person-service:build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish transaction-service-client
-        run: cd transaction-service/transaction-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build service individuals-API
-        run: cd individuals-api && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build service transaction-service
-        run: cd transaction-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build service person-service
-        run: cd person-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-
-
-#      # Step 2: Run integration tests
-#      - name: Run integration tests
-#        run: cd individuals-api && ./gradlew test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+      - name: Upload JARs
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-jars
+          path: |
+            **/build/libs/*.jar
+          retention-days: 1
 
   docker-create:
     needs: build
@@ -64,6 +57,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download JARs
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-jars
+
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
