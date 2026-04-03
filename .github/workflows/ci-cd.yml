@@ -47,3 +47,29 @@ jobs:
         run: cd person-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
 
+#      # Step 2: Run integration tests
+#      - name: Run integration tests
+#        run: cd individuals-api && ./gradlew test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
+  docker-create:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+    strategy:
+      matrix:
+        service: [ individuals-api, transaction-service, person-service ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push docker image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}
+          
+          docker build -t $IMAGE_ID:latest ./${{ matrix.service }}
+          docker push $IMAGE_ID:latest
