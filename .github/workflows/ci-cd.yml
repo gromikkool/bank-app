@@ -9,11 +9,36 @@ env:
   GPR_REPO_URL: "https://maven.pkg.github.com/gromikkool/bank-app"
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      individuals-service: ${{ steps.filter.outputs.individuals-service }}
+      person-service: ${{ steps.filter.outputs.person-service }}
+      transaction-service: ${{ steps.filter.outputs.transaction-service }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            individuals-service:
+              - 'individuals-api/**'
+            person-service:
+              - 'person-service/**'
+            transaction-service:
+              - 'transaction-service/**'
+
   build:
+    needs: detect-changes
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    if: |
+      needs.detect-changes.outputs.individuals-service == 'true' ||
+      needs.detect-changes.outputs.person-service == 'true' ||
+      needs.detect-changes.outputs.transaction-service == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -27,19 +52,48 @@ jobs:
           distribution: 'corretto'
           cache: 'gradle'
 
-      - name: Publish Clients
+      - name: Publish Person-service client
+        if: needs.detect-changes.outputs.person-service == 'true'
         run: |
-          cd person-service/person-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-          cd ../../transaction-service/transaction-service-client && ./gradlew publish -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+          cd person-service/person-service-client && ./gradlew publish \
+          -PrepoUrl=${{ env.GPR_REPO_URL }} \
+          -PgprUser=${{ secrets.GPR_USER }} \
+          -PgprKey=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Services
+      - name: Publish Transaction-Service client
+        if: needs.detect-changes.outputs.transaction-service == 'true'
         run: |
-          echo "Building individuals-api..."
-          cd individuals-api && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-          
-          cd ../transaction-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
-          
-          cd ../person-service && ./gradlew build -x test -PrepoUrl=${{ env.GPR_REPO_URL }} -PgprUser=${{ secrets.GPR_USER }} -PgprKey=${{ secrets.GITHUB_TOKEN }}
+          cd transaction-service/transaction-service-client && ./gradlew publish \
+          -PrepoUrl=${{ env.GPR_REPO_URL }} \
+          -PgprUser=${{ secrets.GPR_USER }} \
+          -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
+
+
+      - name: Build individuals-api
+        if: needs.detect-changes.outputs.individuals-service == 'true'
+        run: |
+          cd individuals-api && ./gradlew build -x test \
+          -PrepoUrl=${{ env.GPR_REPO_URL }} \
+          -PgprUser=${{ secrets.GPR_USER }} \
+          -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build transaction-service
+        if: needs.detect-changes.outputs.transaction-service == 'true'
+        run: |
+          cd transaction-service && ./gradlew build -x test \
+            -PrepoUrl=${{ env.GPR_REPO_URL }} \
+            -PgprUser=${{ secrets.GPR_USER }} \
+            -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build person-service
+        if: needs.detect-changes.outputs.person-service == 'true'
+        run: |
+          cd person-service && ./gradlew build -x test \
+            -PrepoUrl=${{ env.GPR_REPO_URL }} \
+            -PgprUser=${{ secrets.GPR_USER }} \
+            -PgprKey=${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload JARs
         uses: actions/upload-artifact@v4
         with:
@@ -49,7 +103,7 @@ jobs:
           retention-days: 1
 
   docker-create:
-    needs: build
+    needs: [detect-changes, build]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -57,15 +111,19 @@ jobs:
       contents: read
     strategy:
       matrix:
-        service: [ individuals-api, transaction-service, person-service ]
-
+        include:
+          - service: individuals-api
+            changed: ${{ needs.detect-changes.outputs.individuals-service }}
+          - service: transaction-service
+            changed: ${{ needs.detect-changes.outputs.transaction-service }}
+          - service: person-service
+            changed: ${{ needs.detect-changes.outputs.person-service }}
+    if: matrix.changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
       - name: Generate docker image tag
-        id: generate-image-tag
-        if: steps.prerun.outputs.result != 'skip'
-        run: echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV && echo $IMAGE_TAG
+        run: echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV
 
       # Create IMAGE_BASE variable
       - name: Set Image Context
