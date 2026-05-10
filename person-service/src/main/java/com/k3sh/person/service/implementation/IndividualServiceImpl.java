@@ -4,7 +4,7 @@ import com.k3sh.common.model.IndividualCreateDto;
 import com.k3sh.common.model.IndividualDto;
 import com.k3sh.person.entity.Country;
 import com.k3sh.person.entity.Individual;
-import com.k3sh.person.exception.FailedToCreateEntity;
+import com.k3sh.person.exception.CreateEntityFailed;
 import com.k3sh.person.exception.UserAlreadyExists;
 import com.k3sh.person.mapper.IndividualMapper;
 import com.k3sh.person.repository.IndividualRepository;
@@ -73,7 +73,7 @@ public class IndividualServiceImpl implements IndividualService {
                Individual savedIndividual = individualRepository.save(individual);
                return individualMapper.toDto(savedIndividual);
           } catch (DataIntegrityViolationException ex) {
-               throw new FailedToCreateEntity("Failed to create user", ex);
+               throw new CreateEntityFailed("Failed to create user", ex);
           }
      }
 
