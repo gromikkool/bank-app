@@ -15,9 +15,11 @@ jobs:
       individuals-service: ${{ steps.filter.outputs.individuals-service }}
       person-service: ${{ steps.filter.outputs.person-service }}
       transaction-service: ${{ steps.filter.outputs.transaction-service }}
-
+      docker-matrix: ${{ steps.set-matrix.outputs.matrix }}
+      any-changed: ${{ steps.set-matrix.outputs.any-changed }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -29,16 +31,37 @@ jobs:
             transaction-service:
               - 'transaction-service/**'
 
+      - name: Build docker matrix from changed services
+        id: set-matrix
+        run: |
+          SERVICES=()
+          if [ "${{ steps.filter.outputs.individuals-service }}" == "true" ]; then
+            SERVICES+=('{"service":"individuals-api"}')
+          fi
+          if [ "${{ steps.filter.outputs.person-service }}" == "true" ]; then
+            SERVICES+=('{"service":"person-service"}')
+          fi
+          if [ "${{ steps.filter.outputs.transaction-service }}" == "true" ]; then
+            SERVICES+=('{"service":"transaction-service"}')
+          fi
+
+          if [ ${#SERVICES[@]} -eq 0 ]; then
+            echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
+            echo "any-changed=false" >> $GITHUB_OUTPUT
+          else
+            JSON=$(printf ',%s' "${SERVICES[@]}")
+            JSON="[${JSON:1}]"
+            echo "matrix={\"include\":$JSON}" >> $GITHUB_OUTPUT
+            echo "any-changed=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
     needs: detect-changes
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
-    if: |
-      needs.detect-changes.outputs.individuals-service == 'true' ||
-      needs.detect-changes.outputs.person-service == 'true' ||
-      needs.detect-changes.outputs.transaction-service == 'true'
+    if: needs.detect-changes.outputs.any-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -103,32 +126,24 @@ jobs:
           retention-days: 1
 
   docker-create:
-    needs: [detect-changes, build]
+    needs: [ detect-changes, build ]
+    if: needs.detect-changes.outputs.any-changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       packages: write
       contents: read
     strategy:
-      matrix:
-        include:
-          - service: individuals-api
-            changed: ${{ needs.detect-changes.outputs.individuals-service }}
-          - service: transaction-service
-            changed: ${{ needs.detect-changes.outputs.transaction-service }}
-          - service: person-service
-            changed: ${{ needs.detect-changes.outputs.person-service }}
-    if: matrix.changed == 'true'
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.detect-changes.outputs.docker-matrix) }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Generate docker image tag
         run: echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV
 
-      # Create IMAGE_BASE variable
       - name: Set Image Context
-        run: |
-          echo "IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}" >> $GITHUB_ENV
+        run: echo "IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
