@@ -4,6 +4,12 @@ on:
     branches: [ develop ]
   pull_request:
     branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Force build all services'
+        type: boolean
+        default: false
 
 env:
   GPR_REPO_URL: "https://maven.pkg.github.com/gromikkool/bank-app"
@@ -24,7 +30,7 @@ jobs:
         id: filter
         with:
           filters: |
-            individuals-service:
+            individuals-api:
               - 'individuals-api/**'
             person-service:
               - 'person-service/**'
@@ -35,7 +41,7 @@ jobs:
         id: set-matrix
         run: |
           SERVICES=()
-          if [ "${{ steps.filter.outputs.individuals-service }}" == "true" ]; then
+          if [ "${{ steps.filter.outputs.individuals-api }}" == "true" ]; then
             SERVICES+=('{"service":"individuals-api"}')
           fi
           if [ "${{ steps.filter.outputs.person-service }}" == "true" ]; then
@@ -94,7 +100,7 @@ jobs:
 
 
       - name: Build individuals-api
-        if: needs.detect-changes.outputs.individuals-service == 'true'
+        if: needs.detect-changes.outputs.individuals-api == 'true'
         run: |
           cd individuals-api && ./gradlew build -x test \
           -PrepoUrl=${{ env.GPR_REPO_URL }} \
@@ -139,14 +145,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Generate docker image tag
         run: echo "IMAGE_TAG=$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> $GITHUB_ENV
 
       - name: Set Image Context
-        run: echo "IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}" >> $GITHUB_ENV
-
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        run: |
+           echo "IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}" >> $GITHUB_ENV
+           echo "IMAGE_BASE_ECR=${{ steps.login-ecr.outputs.registry }}/bank-app/${{ matrix.service }}" >> $GITHUB_ENV
 
       - name: Download JARs
         uses: actions/download-artifact@v4
@@ -158,6 +177,8 @@ jobs:
           docker build \
             -t ${{ env.IMAGE_BASE }}:latest \
             -t ${{ env.IMAGE_BASE }}:${{ env.IMAGE_TAG }} \
+            -t ${{ env.IMAGE_BASE_ECR }}:latest \
+            -t ${{ env.IMAGE_BASE_ECR }}:${{ env.IMAGE_TAG }} \
             ./${{ matrix.service }}
 
       - name: Run trivy vulnerability scanner
@@ -173,3 +194,5 @@ jobs:
         run: |
           docker push ${{ env.IMAGE_BASE }}:latest
           docker push ${{ env.IMAGE_BASE }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.IMAGE_BASE_ECR }}:latest
+          docker push ${{ env.IMAGE_BASE_ECR }}:${{ env.IMAGE_TAG }}
