@@ -18,7 +18,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      individuals-service: ${{ steps.filter.outputs.individuals-service }}
+      individuals-api: ${{ steps.filter.outputs.individuals-api}}
       person-service: ${{ steps.filter.outputs.person-service }}
       transaction-service: ${{ steps.filter.outputs.transaction-service }}
       docker-matrix: ${{ steps.set-matrix.outputs.matrix }}
