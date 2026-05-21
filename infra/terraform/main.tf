@@ -1,14 +1,6 @@
 terraform {
   required_version = ">= 1.6.0"
 
-  backend "s3" {
-    bucket = "bank-app-test-bucket"
-    region = "us-east-1"
-    key = "dev/terraform.tfstate"
-    encrypt = true
-    use_lockfile = true
-  }
-
   required_providers {
     aws = {
     source = "hashicorp/aws"
@@ -19,6 +11,6 @@ terraform {
 
 provider "aws" {
   access_key = ""
-  secret_key = ""  // podumat'
+  secret_key = ""
   region = "us-east-1"
 }
