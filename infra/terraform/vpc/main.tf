@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "6.36.0"
-    }
-  }
-}
 
 resource "aws_vpc" "bank-app-terr-vpc" {
   cidr_block = var.cidr_block
