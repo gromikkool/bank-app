@@ -6,6 +6,10 @@ variable "name" {
   type=string #"keycloak", "person"
 }
 
+variable "username" {
+  type=string #username
+}
+
 variable "db_subnet_ids" {
   type = list(string)
 }
