@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value = aws_vpc.bank-app-terr-vpc
+  value = aws_vpc.bank-app-terr-vpc.id
 }
 
 output "public_subnet_ids" {

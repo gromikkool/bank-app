@@ -56,8 +56,8 @@ resource "aws_route_table" "bank-rt-public" {
 }
 
 resource "aws_route_table_association" "public" {
-  route_table_id = aws_route_table.bank-rt-public
-  subnet_id = aws_subnet.bank-public
   count = length(aws_subnet.bank-public)
+  route_table_id = aws_route_table.bank-rt-public.id
+  subnet_id = aws_subnet.bank-public[count.index].id
 }
 

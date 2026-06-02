@@ -1,5 +1,5 @@
 resource "aws_db_subnet_group" "rds-group" {
-  name = "${var.env}-${var.name}-subnet-group"
+  name = "${var.env}-${var.db_name}-subnet-group"
   subnet_ids = var.db_subnet_ids
 }
 
@@ -9,7 +9,7 @@ resource "random_password" "rds-password" {
 }
 
 resource "aws_security_group" "rds-sg" {
-  name = "${var.env}-${var.name}-rds-sg"
+  name = "${var.env}-${var.db_name}-rds-sg"
   vpc_id = "${var.vpc_id}"
 
   ingress {
@@ -22,29 +22,29 @@ resource "aws_security_group" "rds-sg" {
 
 resource "aws_db_instance" "main-db" {
   engine = "postgres"
-  version = "15.4"
-  db_name = var.name
-  username = "keycloak"
+  engine_version = "15.4"
+  db_name = var.db_name
+  username = var.username
   password = random_password.rds-password.result
   instance_class = var.instance_class
   db_subnet_group_name = aws_db_subnet_group.rds-group.name
   allocated_storage = var.allocated_storage
-  security_group_ids = [aws_security_group.rds-sg.id]
-  publically_accessible = false
+  vpc_security_group_ids = [aws_security_group.rds-sg.id]
+  publicly_accessible = false
   skip_final_snapshot = true
 }
 
 resource "aws_secretsmanager_secret" "rds-secret" {
-  name = "${var.env}/${var.name}/db"
-  secret_binary = base64encode(random_password.rds-password.result)
+  name = "${var.env}/${var.db_name}/db"
 }
 resource "aws_secretsmanager_secret_version" "rds-secret-version" {
   secret_id = aws_secretsmanager_secret.rds-secret.id
+  secret_binary = base64encode(random_password.rds-password.result)
   secret_string = jsonencode({
     username = var.username
     password = random_password.rds-password.result
     host = aws_db_instance.main-db.address
     port = 5432
-    database = var.name
+    database = var.db_name
   })
 }

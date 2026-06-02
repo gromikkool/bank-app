@@ -2,7 +2,7 @@ variable "env" {
   type = string
 }
 
-variable "name" {
+variable "db_name" {
   type=string #"keycloak", "person"
 }
 
