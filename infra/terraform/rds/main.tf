@@ -10,7 +10,7 @@ resource "random_password" "rds-password" {
 
 resource "aws_security_group" "rds-sg" {
   name = "${var.env}-${var.db_name}-rds-sg"
-  vpc_id = "${var.vpc_id}"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port = 5432
@@ -22,9 +22,10 @@ resource "aws_security_group" "rds-sg" {
 
 resource "aws_db_instance" "main-db" {
   engine = "postgres"
-  engine_version = "15.4"
+  engine_version = "15"
   db_name = var.db_name
   username = var.username
+  identifier = "dev-${var.db_name}-db"
   password = random_password.rds-password.result
   instance_class = var.instance_class
   db_subnet_group_name = aws_db_subnet_group.rds-group.name
@@ -39,7 +40,6 @@ resource "aws_secretsmanager_secret" "rds-secret" {
 }
 resource "aws_secretsmanager_secret_version" "rds-secret-version" {
   secret_id = aws_secretsmanager_secret.rds-secret.id
-  secret_binary = base64encode(random_password.rds-password.result)
   secret_string = jsonencode({
     username = var.username
     password = random_password.rds-password.result

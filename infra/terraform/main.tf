@@ -31,17 +31,9 @@ resource "aws_security_group" "ecs_tasks" {
     from_port = 8080
     to_port   = 8080
     protocol  = "tcp"
-    self      = true # межсервисное общение
-  }
-
-  ingress {
-    from_port = 8080
-    to_port   = 8080
-    protocol  = "tcp"
     self = true
 
-    // ALB настроить потом
-    # security_groups = [module.alb.alb_security_group_id]
+    security_groups = [module.alb.alb_security_group_id]
   }
 
   egress {
@@ -61,6 +53,13 @@ module "vpc" {
   env    = local.env
 }
 
+module "alb" {
+  source = "./alb"
+
+  env    = local.env
+  vpc_id = module.vpc.vpc_id
+}
+
 module "keycload-db" {
   source          = "./rds"
   env             = local.env
@@ -74,10 +73,14 @@ module "keycload-db" {
 module "person-db" {
   source          = "./rds"
   env             = local.env
-  db_name            = "person"
+  db_name         = "person"
   username        = "person_admin"
   db_subnet_ids   = module.vpc.db_subnet_ids
   vpc_id          = module.vpc.vpc_id
   ecs_tasks_sg_id = aws_security_group.ecs_tasks.id
 }
 
+module "cloud-mao" {
+  source = "./cloud-map"
+  vpc_id = module.vpc.vpc_id
+}
