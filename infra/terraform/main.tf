@@ -2,16 +2,16 @@ terraform {
   required_version = ">= 1.6.0"
 
   backend "s3" {
-    bucket = "bank-app-terraform"
-    region = "us-east-1"
-    key = "dev/terraform.tfstate"
-    encrypt = true
+    bucket       = "bank-app-terraform"
+    region       = "us-east-1"
+    key          = "dev/terraform.tfstate"
+    encrypt      = true
     use_lockfile = true
   }
 
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "6.36.0"
     }
   }
@@ -31,7 +31,7 @@ resource "aws_security_group" "ecs_tasks" {
     from_port = 8080
     to_port   = 8080
     protocol  = "tcp"
-    self = true
+    self      = true
 
     security_groups = [module.alb.alb_security_group_id]
   }
@@ -63,8 +63,8 @@ module "alb" {
 module "keycload-db" {
   source          = "./rds"
   env             = local.env
-  db_name            = "keycloak"
-  username = "keycloak"
+  db_name         = "keycloak"
+  username        = "keycloak"
   db_subnet_ids   = module.vpc.db_subnet_ids
   vpc_id          = module.vpc.vpc_id
   ecs_tasks_sg_id = aws_security_group.ecs_tasks.id
@@ -84,3 +84,17 @@ module "cloud-mao" {
   source = "./cloud-map"
   vpc_id = module.vpc.vpc_id
 }
+
+module "security" {
+  source = "./modules/security"
+  env    = local.env
+  vpc_id = module.vpc.vpc_id
+}
+
+module "secrets" {
+  source = "./modules/secrets"
+  env    = local.env
+  vpc_id = module.vpc.vpc_id
+}
+
+
